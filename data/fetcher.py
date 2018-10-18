@@ -11,7 +11,7 @@ class Fetcher:
         try:
             self.headers = {"Ocp-Apim-Subscription-Key": os.environ["API_KEY"]}
         except KeyError:
-            self.headers = {"Ocp-Apim-Subscription-Key": "0192313657c949839f025d9d6f027d17"}
+            self.headers = {"Ocp-Apim-Subscription-Key": ""}
 
     def pull_data(self, domain: str) -> dict:
         params = {"q": "{}+site:{}".format(domain, domain), "textDecorations": True, "textFormat": "HTML"}
