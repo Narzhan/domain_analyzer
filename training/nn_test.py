@@ -1,37 +1,41 @@
-import tensorflow as tf
-from tensorflow import keras
-import numpy as np
-import numpy as np
-import matplotlib.pyplot as plt
+import numpy as np # linear algebra
+import pandas as pd
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import StandardScaler
+from keras.models import Sequential
+from keras.layers import Dense
+from sklearn.metrics import confusion_matrix
+from keras.layers import Dropout
+from keras.layers import Flatten
+from keras.layers.convolutional import Convolution2D
+from keras.layers.convolutional import MaxPooling2D
+from sklearn.preprocessing import LabelEncoder,OneHotEncoder
+from keras import backend as K
 
-print(tf.__version__)
+dataset= pd.read_csv("result.csv")
 
-model = keras.Sequential()
-model.add(keras.layers.Dense(64, activation='relu'))
-# Add another:
-model.add(keras.layers.Dense(64, activation='sigmoid'))
-# Add a softmax layer with 10 output units:
-model.add(keras.layers.Dense(10, activation='softmax'))
-# Or:
-# layers.Dense(64, activation=tf.sigmoid)
-model.compile(optimizer=tf.train.RMSPropOptimizer(0.01),
-              loss=keras.losses.categorical_crossentropy,
-              metrics=[keras.metrics.categorical_accuracy])
+array = dataset.values
+X = array[:, 0:12]
+Y = array[:, 12]
 
-filename = "result.csv"
-record_defaults = [tf.int64] * 13
-dataset = tf.contrib.data.CsvDataset(filename, record_defaults, header=True)
-dataset=dataset.batch(32)
-dataset=dataset.repeat()
+X_train, X_test, y_train, y_test = train_test_split(X, Y, test_size=0.2)
+# sc = StandardScaler()
+# X_train = sc.fit_transform(X_train)
+# X_test = sc.transform(X_test)
 
-model.fit(dataset, epochs=10, steps_per_epoch=30)
+classifier = Sequential()
+# Adding the input layer and the first hidden layer
+classifier.add(Dense(output_dim=6, init='uniform', activation='relu', input_dim=12))
+# Adding the second hidden layer
+classifier.add(Dense(output_dim=6, init='uniform', activation='relu'))
+# Adding the output layer
+classifier.add(Dense(output_dim=1, init='uniform', activation='sigmoid'))
 
-# dataset = tf.data.Dataset.from_tensor_slices((data, labels))
-# dataset = dataset.batch(32).repeat()
-#
-# val_dataset = tf.data.Dataset.from_tensor_slices((val_data, val_labels))
-# val_dataset = val_dataset.batch(32).repeat()
-#
-# model.fit(dataset, epochs=10, steps_per_epoch=30,
-#           validation_data=val_dataset,
-#           validation_steps=3)
+classifier.compile(optimizer='adam', loss='binary_crossentropy', metrics=['accuracy'])
+
+# Fitting our model
+classifier.fit(X_train, y_train, batch_size=100, nb_epoch=10)
+y_pred = classifier.predict(X_test)
+y_pred = (y_pred > 0.5)
+cm = confusion_matrix(y_test, y_pred)
+print(cm)
