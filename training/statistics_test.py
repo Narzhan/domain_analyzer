@@ -1,11 +1,18 @@
 import pandas
 from pandas.plotting import scatter_matrix
 import matplotlib.pyplot as plt
+from xgboost import XGBClassifier
+from catboost import CatBoostClassifier
 from sklearn import model_selection
+import lightgbm as lgb
+from sklearn.metrics import mean_squared_error
+from sklearn import decomposition
 from sklearn.metrics import classification_report
 from sklearn.metrics import confusion_matrix
 from sklearn.metrics import accuracy_score
 from sklearn.linear_model import LogisticRegression
+from sklearn.linear_model import LinearRegression
+from sklearn.linear_model import SGDClassifier
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.discriminant_analysis import LinearDiscriminantAnalysis
@@ -15,6 +22,7 @@ from sklearn.linear_model import SGDClassifier
 from sklearn.cluster import KMeans
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.ensemble import AdaBoostClassifier
+from sklearn.ensemble import GradientBoostingClassifier
 from sklearn.svm import SVC
 
 dataset = pandas.read_csv("result.csv")
@@ -53,6 +61,10 @@ models.append(('Kmeans', KMeans()))
 models.append(('Ada', AdaBoostClassifier()))
 # models.append(('SVM', SGDClassifier()))
 models.append(('SVM', SVC(gamma="scale")))
+models.append(('GBC', GradientBoostingClassifier()))
+models.append(('SQD', SGDClassifier()))
+models.append(('XGB', XGBClassifier()))
+models.append(('Cat', CatBoostClassifier(iterations=2, learning_rate=1, depth=2, loss_function='Logloss')))
 
 results = []
 names = []
@@ -68,6 +80,25 @@ for name, model in models:
     else:
         print(msg)
 
+# # train_data = lgb.Dataset(X_train, label=Y_train)
+# lgb_train = lgb.Dataset(X_train, Y_train)
+# lgb_eval = lgb.Dataset(X_validation, Y_validation, reference=lgb_train)
+# # param = {'num_leaves': 31, 'num_trees': 50, 'objective': 'binary', 'metric': 'auc'}
+# param = {
+#     'task': 'train',
+#     'boosting_type': 'gbdt',
+#     'objective': 'binary',
+#     'metric': {'l2', 'auc'},
+#     'num_leaves': 31,
+#     'learning_rate': 0.05,
+#     'feature_fraction': 0.9,
+#     'bagging_fraction': 0.8,
+#     'bagging_freq': 5,
+#     'verbose': 0
+# }
+# bst = lgb.train(param, lgb_train, 10, valid_sets=lgb_eval)
+# y_pred = bst.predict(X_validation, num_iteration=bst.best_iteration)
+# print('The mean of prediction is:', y_pred.mean())
 
 # Make predictions on validation dataset
 knn = KNeighborsClassifier()
@@ -76,6 +107,17 @@ predictions = knn.predict(X_validation)
 print(accuracy_score(Y_validation, predictions))
 print(confusion_matrix(Y_validation, predictions))
 print(classification_report(Y_validation, predictions))
+
+# Factor reduction, Create PCA obeject
+# k =min(n_sample, n_features)
+pca= decomposition.PCA(n_components=12)
+# For Factor analysis
+fa= decomposition.FactorAnalysis()
+# Reduced the dimension of training dataset using PCA
+train_reduced = pca.fit_transform(X_train)
+#Reduced the dimension of test dataset
+test_reduced = pca.transform(X_validation)
+print(test_reduced.shape)
 
 
 # # Compare Algorithms
