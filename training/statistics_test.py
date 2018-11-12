@@ -15,7 +15,7 @@ from sklearn.linear_model import LinearRegression
 from sklearn.linear_model import SGDClassifier
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.neighbors import KNeighborsClassifier
-from sklearn.discriminant_analysis import LinearDiscriminantAnalysis
+from sklearn.discriminant_analysis import LinearDiscriminantAnalysis, QuadraticDiscriminantAnalysis
 from sklearn.naive_bayes import GaussianNB
 from sklearn.naive_bayes import MultinomialNB
 from sklearn.linear_model import SGDClassifier
@@ -25,7 +25,8 @@ from sklearn.ensemble import AdaBoostClassifier
 from sklearn.ensemble import GradientBoostingClassifier
 from sklearn.svm import SVC
 
-dataset = pandas.read_csv("result.csv")
+# dataset = pandas.read_csv("result.csv")
+dataset = pandas.read_csv("test_data.csv", index_col=13)
 print(dataset.shape)
 print(dataset.describe())
 print(dataset.groupby("label").size())
@@ -46,13 +47,22 @@ seed = 7
 X_train, X_validation, Y_train, Y_validation = model_selection.train_test_split(X, Y, test_size=validation_size, random_state=seed)
 
 
-seed = 7
 scoring = 'accuracy'
 
 models = []
-models.append(('LR', LogisticRegression(multi_class="auto", solver='lbfgs')))
-models.append(('LDA', LinearDiscriminantAnalysis()))
-models.append(('KNN', KNeighborsClassifier()))
+models.append(('LR(lbfgs, balanced)', LogisticRegression(multi_class="ovr", solver='lbfgs', n_jobs=-1, warm_start=True, class_weight="balanced")))
+models.append(('LR(sag, no balance)', LogisticRegression(multi_class="ovr", solver='sag', n_jobs=-1, warm_start=True)))
+# models.append(('LR(newton-cg, no balance)', LogisticRegression(multi_class="ovr", solver='newton-cg', n_jobs=-1, warm_start=True, max_iter=400)))
+# logistic solvers {‘newton-cg’, ‘lbfgs’, ‘liblinear’, ‘sag’, ‘saga’}
+# ======================================
+models.append(('LDA(svd)', LinearDiscriminantAnalysis()))
+models.append(('LDA(lsqr)', LinearDiscriminantAnalysis(solver="lsqr", shrinkage="auto")))
+models.append(('LDA(eigen)', LinearDiscriminantAnalysis(solver="eigen", shrinkage="auto")))
+# ======================================
+models.append(('KNN(distance)', KNeighborsClassifier(weights="distance", algorithm="auto")))
+models.append(('KNN(uniform)', KNeighborsClassifier(weights="uniform", algorithm="auto")))
+# podporuje zadavani vah (weights), leaf_size, p (vzdalenost), leaf_size, n_neighbours
+# ======================================)
 models.append(('CART', DecisionTreeClassifier()))
 models.append(('NB', GaussianNB()))
 models.append(('MNB', MultinomialNB()))
@@ -127,3 +137,17 @@ print(test_reduced.shape)
 # plt.boxplot(results)
 # ax.set_xticklabels(names)
 # plt.show()
+
+# results = []
+# names = []
+# for name, model in models:
+#     try:
+#         kfold = model_selection.KFold(n_splits=10, random_state=seed)
+#         cv_results = model_selection.cross_val_score(model, train_reduced, Y_train, cv=kfold, scoring=scoring)
+#         results.append(cv_results)
+#         names.append(name)
+#         msg = "%s: %f (%f)" % (name, cv_results.mean(), cv_results.std())
+#     except Exception as e:
+#         print(e)
+#     else:
+#         print(msg)
