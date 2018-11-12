@@ -12,7 +12,8 @@ from keras.layers.convolutional import MaxPooling2D
 from sklearn.preprocessing import LabelEncoder,OneHotEncoder
 from keras import backend as K
 
-dataset= pd.read_csv("result.csv")
+# dataset= pd.read_csv("result.csv")
+dataset = pd.read_csv("test_data.csv", index_col=13)
 
 array = dataset.values
 X = array[:, 0:12]
