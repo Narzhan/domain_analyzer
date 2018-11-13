@@ -50,23 +50,20 @@ X_train, X_validation, Y_train, Y_validation = model_selection.train_test_split(
 scoring = 'accuracy'
 
 models = []
-models.append(('LR(lbfgs, balanced)', LogisticRegression(multi_class="ovr", solver='lbfgs', n_jobs=-1, warm_start=True, class_weight="balanced")))
-models.append(('LR(sag, no balance)', LogisticRegression(multi_class="ovr", solver='sag', n_jobs=-1, warm_start=True)))
+models.append(('LR(lbfgs, balanced)', LogisticRegression(solver='lbfgs', class_weight="balanced"))) #, n_jobs=-1, warm_start=True
+# models.append(('LR(sag, no balance)', LogisticRegression(multi_class="ovr", solver='sag', n_jobs=-1, warm_start=True)))
 # models.append(('LR(newton-cg, no balance)', LogisticRegression(multi_class="ovr", solver='newton-cg', n_jobs=-1, warm_start=True, max_iter=400)))
-# logistic solvers {‘newton-cg’, ‘lbfgs’, ‘liblinear’, ‘sag’, ‘saga’}
-# ======================================
 models.append(('LDA(svd)', LinearDiscriminantAnalysis()))
-models.append(('LDA(lsqr)', LinearDiscriminantAnalysis(solver="lsqr", shrinkage="auto")))
-models.append(('LDA(eigen)', LinearDiscriminantAnalysis(solver="eigen", shrinkage="auto")))
-# ======================================
-models.append(('KNN(distance)', KNeighborsClassifier(weights="distance", algorithm="auto")))
-models.append(('KNN(uniform)', KNeighborsClassifier(weights="uniform", algorithm="auto")))
-# podporuje zadavani vah (weights), leaf_size, p (vzdalenost), leaf_size, n_neighbours
-# ======================================)
-models.append(('CART', DecisionTreeClassifier()))
+# models.append(('LDA(lsqr)', LinearDiscriminantAnalysis(solver="lsqr", shrinkage="auto")))
+# models.append(('LDA(eigen)', LinearDiscriminantAnalysis(solver="eigen", shrinkage="auto")))
+models.append(('KNN(distance)', KNeighborsClassifier())) # weights="distance", algorithm="auto"
+# models.append(('KNN(uniform)', KNeighborsClassifier(weights="uniform", algorithm="auto")))
+models.append(('DecisionTree', DecisionTreeClassifier())) # gini, best
+# models.append(('DesitionTree(entropy)', DecisionTreeClassifier(criterion="entropy", splitter="random")))
 models.append(('NB', GaussianNB()))
 models.append(('MNB', MultinomialNB()))
 models.append(('RForest', RandomForestClassifier(n_estimators=100)))
+# models.append(('RForest', RandomForestClassifier(n_estimators=100, criterion="entropy", warm_start=True)))
 models.append(('Kmeans', KMeans()))
 models.append(('Ada', AdaBoostClassifier()))
 # models.append(('SVM', SGDClassifier()))
