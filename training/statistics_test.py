@@ -21,14 +21,17 @@ from sklearn.naive_bayes import MultinomialNB
 from sklearn.linear_model import SGDClassifier
 from sklearn.cluster import KMeans
 from sklearn.ensemble import RandomForestClassifier
+from sklearn.ensemble import RandomForestRegressor
 from sklearn.ensemble import AdaBoostClassifier
 from sklearn.ensemble import GradientBoostingClassifier
 from sklearn.svm import SVC
+from sklearn.ensemble import ExtraTreesClassifier
+from sklearn.feature_selection import SelectFromModel
 
 # dataset = pandas.read_csv("result.csv")
 dataset = pandas.read_csv("test_data.csv", index_col=13)
 print(dataset.shape)
-print(dataset.describe())
+print(round(dataset.describe(),2))
 print(dataset.groupby("label").size())
 # dataset.plot(kind='box', subplots=True, layout=(5,6), sharex=False, sharey=False)
 # plt.show()
@@ -48,6 +51,19 @@ X_train, X_validation, Y_train, Y_validation = model_selection.train_test_split(
 
 
 scoring = 'accuracy'
+
+# rf_exp = RandomForestRegressor(n_estimators=1000, random_state=100)
+# rf_exp.fit(X_train, Y_train)
+rf_exp = ExtraTreesClassifier(n_estimators=50)
+rf_exp = rf_exp.fit(X_train, Y_train)
+importances = list(rf_exp.feature_importances_)
+feature_importances = [(feature, round(importance, 2)) for feature, importance in zip(list(dataset), importances)]
+feature_importances = sorted(feature_importances, key=lambda x: x[1], reverse=True)
+[print('Variable: {:20} Importance: {}'.format(*pair)) for pair in feature_importances]
+
+model = SelectFromModel(rf_exp, prefit=True)
+X_new = model.transform(X_train)
+print(X_new.shape)
 
 models = []
 models.append(('LR(lbfgs, balanced)', LogisticRegression(solver='lbfgs', class_weight="balanced"))) #, n_jobs=-1, warm_start=True
@@ -115,7 +131,8 @@ print(accuracy_score(Y_validation, predictions))
 print(confusion_matrix(Y_validation, predictions))
 print(classification_report(Y_validation, predictions))
 
-# Factor reduction, Create PCA obeject
+# Factor reduction, Create PCA object
+# ICA DALSI ALGO NA ZKOUSKU
 # k =min(n_sample, n_features)
 pca= decomposition.PCA(n_components=12)
 # For Factor analysis
