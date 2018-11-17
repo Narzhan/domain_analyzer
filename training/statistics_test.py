@@ -52,7 +52,7 @@ print(dataset.groupby("label").size())
 array = dataset.values
 X = array[:, 0:12]
 Y = array[:, 12]
-validation_size = 0.80
+validation_size = 0.20
 seed = 7
 X_train, X_validation, Y_train, Y_validation = model_selection.train_test_split(X, Y, test_size=validation_size, random_state=seed)
 
@@ -121,7 +121,6 @@ print("PCA: {}".format(X_new.shape))
 ica=FastICA(n_components=12, random_state=0)
 x_reduced=ica.fit_transform(X_train)
 print("ICA: {}".format(x_reduced.shape))
-
 
 models = []
 # from sklearn.preprocessing import MinMaxScaler
