@@ -36,10 +36,10 @@ from sklearn.svm import LinearSVR
 from sklearn.feature_selection import f_regression
 from sklearn.ensemble import BaggingClassifier
 
-#dataset = pandas.read_csv("result.csv")
-dataset = pandas.read_csv("test_data.csv", index_col=13)
+dataset = pandas.read_csv("result.csv")
+# dataset = pandas.read_csv("test_data.csv", index_col=13)
 print(dataset.shape)
-print(round(dataset.describe(),2))
+print(round(dataset.describe(), 2))
 print(dataset.groupby("label").size())
 # dataset.drop(['label'], axis=1).plot(kind='box', subplots=True, layout=(3,4), sharex=False, sharey=False)
 # plt.show()
@@ -54,10 +54,10 @@ X = array[:, 0:12]
 Y = array[:, 12]
 validation_size = 0.20
 seed = 7
-X_train, X_validation, Y_train, Y_validation = model_selection.train_test_split(X, Y, test_size=validation_size, random_state=seed)
+X_train, X_validation, Y_train, Y_validation = model_selection.train_test_split(X, Y, test_size=validation_size,
+                                                                                random_state=seed)
 
 scoring = 'accuracy'
-
 
 print("Variances: {}".format(dataset.var()))
 print("Correlations: {}".format(dataset.corr()))
@@ -131,15 +131,15 @@ models = []
 models.append(('LR', LogisticRegression(solver='lbfgs', class_weight="balanced")))
 models.append(('LDA', LinearDiscriminantAnalysis()))
 models.append(('KNN', KNeighborsClassifier()))
-models.append(('DecTree', DecisionTreeClassifier())) # gini, best
+models.append(('DecTree', DecisionTreeClassifier()))  # gini, best
 models.append(('NB', GaussianNB()))
 models.append(('MNB', MultinomialNB()))
 models.append(('RForest', RandomForestClassifier(n_estimators=100)))
 models.append(('Kmeans', KMeans()))
 models.append(('Ada', AdaBoostClassifier()))
 models.append(('GaussianNB', GaussianNB()))
-#models.append(('SVM(linear))', LinearSVC(max_iter=4000)))
-#models.append(('SVM', SVC(gamma="scale", cache_size=2000.0)))
+# models.append(('SVM(linear))', LinearSVC(max_iter=2000)))
+# models.append(('SVM', SVC(gamma="scale")))
 models.append(('GBC', GradientBoostingClassifier()))
 models.append(('SQD', SGDClassifier()))
 models.append(('XGB', XGBClassifier()))
@@ -189,7 +189,6 @@ print(accuracy_score(Y_validation, predictions))
 print(confusion_matrix(Y_validation, predictions))
 print(classification_report(Y_validation, predictions))
 
-
 fig = plt.figure(figsize=(10.0, 8.0))
 ax = fig.add_subplot(111)
 plt.boxplot(results, 0, '')
@@ -198,7 +197,7 @@ plt.ylabel("Přesnost")
 for tick in ax.get_xticklabels():
     tick.set_rotation(70)
 plt.savefig("test_data.png")
-# with open("result.txt", "w") as file:
-# 	for name, result in zip(names, results):
-# 		file.write("{},{}\n".format(name, result))
+# with open("test/result_first_test.txt", "w") as file:
+#     for name, result in zip(names, results):
+#         file.write("{},{}\n".format(name, result))
 # plt.show()
