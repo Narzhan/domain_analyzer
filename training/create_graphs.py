@@ -4,6 +4,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
 from scipy import stats
+import csv, ast
 
 dataset = pandas.read_csv("test_data.csv")
 
@@ -47,4 +48,23 @@ def scatter():
     sns.lmplot(dataset.index.values, "page_count", data=dataset, hue="label", fit_reg=False, legend=True)
     plt.legend()
     plt.show()
-scatter()
+
+def compare_graph():
+    results=[]
+    names=[]
+    with open("text/result_test_data.txt", "r") as file:
+        reader =csv.reader(file)
+        for row in reader:
+            names.append(row[0])
+            row[1]=",".join(row[1].split(" "))
+            results.append(ast.literal_eval(row[1]))
+    fig = plt.figure(figsize=(10.0, 8.0))
+    ax = fig.add_subplot(111)
+    plt.boxplot(results, 0, '')
+    ax.set_xticklabels(names)
+    plt.ylabel("Přesnost")
+    for tick in ax.get_xticklabels():
+        tick.set_rotation(70)
+    plt.savefig("test_data(with nn).png")
+
+compare_graph()
