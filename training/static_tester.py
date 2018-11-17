@@ -36,8 +36,8 @@ from sklearn.svm import LinearSVR
 from sklearn.feature_selection import f_regression
 from sklearn.ensemble import BaggingClassifier
 
-dataset = pandas.read_csv("result.csv")
-# dataset = pandas.read_csv("test_data.csv", index_col=13)
+# dataset = pandas.read_csv("result.csv")
+dataset = pandas.read_csv("test_data.csv", index_col=13)
 print(dataset.shape)
 print(round(dataset.describe(), 2))
 print(dataset.groupby("label").size())
@@ -137,7 +137,6 @@ models.append(('MNB', MultinomialNB()))
 models.append(('RForest', RandomForestClassifier(n_estimators=100)))
 models.append(('Kmeans', KMeans()))
 models.append(('Ada', AdaBoostClassifier()))
-models.append(('GaussianNB', GaussianNB()))
 # models.append(('SVM(linear))', LinearSVC(max_iter=2000)))
 # models.append(('SVM', SVC(gamma="scale")))
 models.append(('GBC', GradientBoostingClassifier()))
@@ -189,15 +188,15 @@ print(accuracy_score(Y_validation, predictions))
 print(confusion_matrix(Y_validation, predictions))
 print(classification_report(Y_validation, predictions))
 
-fig = plt.figure(figsize=(10.0, 8.0))
-ax = fig.add_subplot(111)
-plt.boxplot(results, 0, '')
-ax.set_xticklabels(names)
-plt.ylabel("Přesnost")
-for tick in ax.get_xticklabels():
-    tick.set_rotation(70)
-plt.savefig("test_data.png")
-# with open("test/result_first_test.txt", "w") as file:
-#     for name, result in zip(names, results):
-#         file.write("{},{}\n".format(name, result))
+# fig = plt.figure(figsize=(10.0, 8.0))
+# ax = fig.add_subplot(111)
+# plt.boxplot(results, 0, '')
+# ax.set_xticklabels(names)
+# plt.ylabel("Přesnost")
+# for tick in ax.get_xticklabels():
+#     tick.set_rotation(70)
+# plt.savefig("test_data.png")
+with open("test/result_first_test2.txt", "w") as file:
+    for name, result in zip(names, results):
+        file.write("{},{}\n".format(name, result))
 # plt.show()
