@@ -4,7 +4,9 @@ import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
 from scipy import stats
+import matplotlib.mlab as mlab
 import csv, ast
+from statistics import mean
 
 dataset = pandas.read_csv("test_data.csv")
 
@@ -22,19 +24,52 @@ def heat_map():
 
 def histos():
     for cat in list(dataset):
-        x1 = list(dataset[dataset['label'] == 1][cat])
-        x2 = list(dataset[dataset['label'] == 0][cat])
-        colors = ["red", 'blue']
-        names = ["škodlivé", "čisté"]
-        fig = plt.figure(figsize=(5.5, 4.0))
-        plt.bar([[x1], [x2]], color=colors, edgecolor="black", label=names, stacked=True, bins=10)
-        plt.title(cat)
-        plt.legend()
-        plt.xlabel("Hodnota")
-        plt.ylabel("Počet výsktů")
-        plt.savefig("hist_{}.png".format(cat))
-        plt.gcf().clear()
-        #plt.show()
+        if cat in ["totalEstimatedMatches"]:
+
+            x1 = list(dataset[dataset['label'] == 1][cat])
+            x2 = list(dataset[dataset['label'] == 0][cat])
+            colors = ["red", 'blue']
+            names = ["škodlivé", "čisté"]
+            fig = plt.figure(figsize=(5.5, 4.0))
+            plt.hist([x1, x2], color=colors, edgecolor="black", label=names, stacked=True
+                    )
+            plt.title(cat)
+            plt.legend()
+            plt.xlabel("Hodnota")
+            plt.ylabel("Počet výsktů")
+            # plt.savefig("hist_{}.png".format(cat))
+            # plt.gcf().clear()
+            plt.show()
+
+
+def total_est_mtach_hist():
+    cat = "totalEstimatedMatches"
+    x1 = list(dataset[dataset['label'] == 1][cat])
+    x2 = list(dataset[dataset['label'] == 0][cat])
+    colors = ["red", 'blue']
+    names = ["škodlivé", "čisté"]
+    x2_formatted, x1_formatted = [], []
+    for x in x2:
+        if x < 8300:
+            x2_formatted.append(x)
+        else:
+            x2_formatted.append(8300)
+    for x in x1:
+        if x < 8300:
+            x1_formatted.append(x)
+        else:
+            x1_formatted.append(8300)
+    fig = plt.figure(figsize=(5.5, 4.0))
+    plt.hist([x1_formatted, x2_formatted], color=colors, edgecolor="black", label=names, stacked=True
+             )
+    plt.title(cat)
+    plt.legend()
+    plt.xlabel("Hodnota")
+    plt.ylabel("Počet výsktů")
+    plt.savefig("hist_{}.png".format(cat))
+    plt.gcf().clear()
+    # plt.show()
+
 
 def pairplot():
     fig = plt.figure(figsize=(25.0, 25.0))
@@ -67,4 +102,4 @@ def compare_graph():
         tick.set_rotation(70)
     plt.savefig("test_data(with nn).png")
 
-compare_graph()
+total_est_mtach_hist()
