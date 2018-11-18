@@ -13,7 +13,7 @@ from sklearn.naive_bayes import GaussianNB
 from sklearn.naive_bayes import MultinomialNB
 from sklearn.linear_model import SGDClassifier
 from sklearn.cluster import KMeans
-from sklearn.ensemble import RandomForestClassifier
+from sklearn.ensemble import RandomForestClassifier, RandomForestRegressor
 from sklearn.ensemble import AdaBoostClassifier
 from sklearn.ensemble import GradientBoostingClassifier
 from sklearn.decomposition import FastICA
@@ -33,6 +33,7 @@ class MlTester:
         self.X_train, self.X_validation, self.Y_train, self.Y_validation, self.columes = self.load_data()
         print(self.columes)
         self.result = {}
+        self.test_time=""
 
     def data_properties(self, filename: str):
         dataset = pandas.read_csv(filename, index_col=13)
@@ -55,8 +56,9 @@ class MlTester:
                                                                                         random_state=self.seed)
         return X_train, X_validation, Y_train, Y_validation, list(dataset)
 
-    def feature_importance_algo(self, name: str):
-        algorithms = [ExtraTreesClassifier(n_estimators=50), DecisionTreeClassifier(), GradientBoostingClassifier()]
+    def feature_importance_algo(self):
+        # algorithms = [ExtraTreesClassifier(n_estimators=50), DecisionTreeClassifier(), GradientBoostingClassifier()]
+        algorithms= [RandomForestRegressor(n_estimators=1000, random_state=100)]
         for algorithm in algorithms:
             rf_exp = algorithm
             rf_exp = rf_exp.fit(self.X_train, self.Y_train)
@@ -143,19 +145,22 @@ class MlTester:
         except Exception as e:
             print(e)
         print("Took: {}".format(time.time() - start_time))
+        self.test_time = time.time() - start_time
 
     def persist_results(self):
-        with open("test/result_first_test2.txt", "w") as file:
+        with open("text/result_first_test2.txt", "w") as file:
+            file.write("{}\n".format(self.columes))
+            file.write("{}\n".format(self.test_time))
             for name, result in self.result.items():
                 file.write("{},{}\n".format(name, result))
 
 
 if __name__ == '__main__':
-    columns = ["ranking_response", "related_searches", 'full_path', 'part_path', 'page_count', 'about',
+    columns = ["ranking_response", 'full_path', 'part_path', 'about',
                'deep_links', 'fresh', 'infection', 'pages', 'totalEstimatedMatches', 'someResultsRemoved', 'label',
                "domain"]
-    columns.remove("related_searches")
-    tester = MlTester(columns)
-    tester.reduction_pca()
-    tester.train()
-    tester.persist_results()
+    for column in ['full_path', 'about', 'deep_links', 'fresh', 'infection', 'someResultsRemoved']:
+        columns.remove(column)
+        tester = MlTester(columns)
+        tester.train()
+        tester.persist_results()

@@ -12,7 +12,7 @@ dataset = pandas.read_csv("test_data.csv")
 
 
 def heat_map():
-    dataset = dataset.drop('label', 1)
+    # dataset = dataset.drop('label', 1)
     corr = dataset.corr()
     fig = plt.figure(figsize=(15.0, 25.0))
     g=sns.heatmap(corr, 
@@ -102,4 +102,4 @@ def compare_graph():
         tick.set_rotation(70)
     plt.savefig("test_data(with nn).png")
 
-total_est_mtach_hist()
+heat_map()
