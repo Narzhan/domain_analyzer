@@ -45,7 +45,6 @@ class Analyzer:
         categories = ["totalEstimatedMatches", "someResultsRemoved"]
         full_match = 0
         part_math = 0
-        page_count = 0
         about = 0
         deep_links = 0
         fresh = 0
@@ -70,7 +69,6 @@ class Analyzer:
                     else:
                         if domain_tld.fld == url_tld.fld:
                             part_math += 1
-                            page_count += 1
                             if domain_tld.subdomain == url_tld.subdomain:
                                 full_match += 1
                             if "about" in page:
@@ -90,11 +88,11 @@ class Analyzer:
             except Exception as e:
                 print(e)
             self.result[domain].update(
-                {"full_path": full_match, "part_path": part_math, "page_count": page_count, "about": about,
+                {"full_path": full_match, "part_path": part_math, "about": about,
                  "deep_links": deep_links, "fresh": fresh, "infection": infection, "label": label})
         else:
             self.result[domain].update(
-                {"full_path": full_match, "part_path": part_math, "page_count": page_count, "about": about,
+                {"full_path": full_match, "part_path": part_math,  "about": about,
                  "deep_links": deep_links, "fresh": fresh, "infection": infection, "pages": 0,
                  "totalEstimatedMatches": 0, "someResultsRemoved": 0, "label": label})
 
