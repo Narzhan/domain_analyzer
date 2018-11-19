@@ -148,7 +148,7 @@ class MlTester:
         self.test_time = time.time() - start_time
 
     def persist_results(self):
-        with open("text/result_first_test2.txt", "w") as file:
+        with open("text/result_first_test{}.txt".format(len(self.columes)), "w") as file:
             file.write("{}\n".format(self.columes))
             file.write("{}\n".format(self.test_time))
             for name, result in self.result.items():
@@ -156,11 +156,9 @@ class MlTester:
 
 
 if __name__ == '__main__':
-    columns = ["ranking_response", 'full_path', 'part_path', 'about',
+    columns = ["ranking_response","related_searches",'full_path', 'part_path', 'about',
                'deep_links', 'fresh', 'infection', 'pages', 'totalEstimatedMatches', 'someResultsRemoved', 'label',
                "domain"]
-    for column in ['full_path', 'about', 'deep_links', 'fresh', 'infection', 'someResultsRemoved']:
-        columns.remove(column)
-        tester = MlTester(columns)
-        tester.train()
-        tester.persist_results()
+    tester = MlTester(columns)
+    tester.train()
+    # tester.persist_results()
