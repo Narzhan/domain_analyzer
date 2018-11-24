@@ -1,5 +1,7 @@
 import pandas
 import time
+
+from sklearn.metrics import accuracy_score, confusion_matrix, classification_report
 from sklearn.preprocessing import MinMaxScaler
 from xgboost import XGBClassifier
 from catboost import CatBoostClassifier
@@ -47,7 +49,7 @@ class MlTester:
         return pandas.read_csv(filename, index_col=len(self.columns)-1, usecols=self.columns)
 
     def load_data(self):
-        dataset = self.prepare_data("test_data.csv")
+        dataset = self.prepare_data("test_data2.csv")
         array = dataset.values
         X = array[:, 0:len(self.columns)-2]
         Y = array[:, len(self.columns)-2]
@@ -94,7 +96,8 @@ class MlTester:
         pca = decomposition.PCA(n_components=len(self.columns)-2)
         fit = pca.fit(self.X_train, self.Y_train)
         self.X_train = pca.transform(self.X_train)
-        print("PCA: {}".format(self.X_train.shape))
+        print(self.X_train)
+        # print("PCA: {}".format(self.X_train.shape))
         # print("PCA components: {}".format(fit.components_))
         # print("PCA variance: {}".format(fit.explained_variance_ratio_))
 
@@ -119,8 +122,16 @@ class MlTester:
                 'XGB': XGBClassifier(),
                 'CatBoost': CatBoostClassifier(iterations=2, learning_rate=1, depth=2, loss_function='Logloss')}
 
+    def train_best_model(self):
+        knn = KNeighborsClassifier()
+        knn.fit(self.X_train, self.Y_train)
+        predictions = knn.predict(self.X_validation)
+        print(accuracy_score(self.Y_validation, predictions))
+        print(confusion_matrix(self.Y_validation, predictions))
+        print(classification_report(self.Y_validation, predictions))
+
     def scale_data(self):
-        scaling = MinMaxScaler(feature_range=(-1,1)).fit(self.X_train)
+        scaling = MinMaxScaler(feature_range=(-1, 1)).fit(self.X_train)
         self.X_train = scaling.transform(self.X_train)
         self.X_validation = scaling.transform(self.X_validation)
 
@@ -156,9 +167,11 @@ class MlTester:
 
 
 if __name__ == '__main__':
-    columns = ["ranking_response","related_searches",'full_path', 'part_path', 'about',
+    columns = ["ranking_response", 'full_path', 'part_path', 'about',
                'deep_links', 'fresh', 'infection', 'pages', 'totalEstimatedMatches', 'someResultsRemoved', 'label',
                "domain"]
+    # for column in ['full_path', 'about', 'deep_links', 'fresh', 'infection', 'someResultsRemoved']:
+    #     columns.remove(column)
     tester = MlTester(columns)
-    tester.train()
+    tester.train_best_model()
     # tester.persist_results()
