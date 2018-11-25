@@ -6,7 +6,7 @@ import seaborn as sns
 from scipy import stats
 import matplotlib.mlab as mlab
 import csv, ast
-from statistics import mean
+from statistics import mean, stdev
 
 dataset = pandas.read_csv("test_data.csv")
 
@@ -87,19 +87,26 @@ def scatter():
 def compare_graph():
     results=[]
     names=[]
-    with open("text/result_test_data.txt", "r") as file:
-        reader =csv.reader(file)
-        for row in reader:
-            names.append(row[0])
-            row[1]=",".join(row[1].split(" "))
-            results.append(ast.literal_eval(row[1]))
-    fig = plt.figure(figsize=(10.0, 8.0))
-    ax = fig.add_subplot(111)
-    plt.boxplot(results, 0, '')
-    ax.set_xticklabels(names)
-    plt.ylabel("Přesnost")
-    for tick in ax.get_xticklabels():
-        tick.set_rotation(70)
-    plt.savefig("test_data(with nn).png")
+    for k in range(5,11):
+        with open("variable substition/result_first_test{}.txt".format(k), "r") as file:
+            reader =csv.reader(file)
+            next(reader)
+            next(reader)
+            for row in reader:
+                names.append(row[0])
+                row[1]=",".join(row[1].split(" "))
+                results.append(ast.literal_eval(row[1]))
+        print(k)
+        for name, score in zip(names, results):
+            print("{}: {} ({})".format(name, mean(score), stdev(score)))
+        fig = plt.figure(figsize=(10.0, 8.0))
+        ax = fig.add_subplot(111)
+        plt.boxplot(results, 0, '')
+        ax.set_xticklabels(names)
+        plt.ylabel("Přesnost")
+        for tick in ax.get_xticklabels():
+            tick.set_rotation(70)
+        plt.savefig("test_data{}png".format(k))
+        results.clear()
+        names.clear()
 
-heat_map()
