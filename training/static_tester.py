@@ -11,12 +11,12 @@ from sklearn import decomposition
 from sklearn.metrics import classification_report
 from sklearn.metrics import confusion_matrix
 from sklearn.metrics import accuracy_score
-from sklearn.linear_model import LogisticRegression
+from sklearn.linear_model import LogisticRegression, RidgeClassifier, Perceptron, PassiveAggressiveClassifier
 from sklearn.linear_model import LinearRegression
 from sklearn.tree import DecisionTreeClassifier
-from sklearn.neighbors import KNeighborsClassifier
+from sklearn.neighbors import KNeighborsClassifier, NearestCentroid
 from sklearn.discriminant_analysis import LinearDiscriminantAnalysis, QuadraticDiscriminantAnalysis
-from sklearn.naive_bayes import GaussianNB
+from sklearn.naive_bayes import GaussianNB, BernoulliNB
 from sklearn.naive_bayes import MultinomialNB
 from sklearn.linear_model import SGDClassifier
 from sklearn.cluster import KMeans
@@ -37,7 +37,7 @@ from sklearn.feature_selection import f_regression
 from sklearn.ensemble import BaggingClassifier
 
 # dataset = pandas.read_csv("result.csv")
-dataset = pandas.read_csv("test_data.csv", index_col=13)
+dataset = pandas.read_csv("test_data2.csv", index_col=12)
 print(dataset.shape)
 print(round(dataset.describe(), 2))
 print(dataset.groupby("label").size())
@@ -50,8 +50,8 @@ print(dataset.groupby("label").size())
 
 
 array = dataset.values
-X = array[:, 0:12]
-Y = array[:, 12]
+X = array[:, 0:11]
+Y = array[:, 11]
 validation_size = 0.20
 seed = 7
 X_train, X_validation, Y_train, Y_validation = model_selection.train_test_split(X, Y, test_size=validation_size,
@@ -143,6 +143,11 @@ models.append(('GBC', GradientBoostingClassifier()))
 models.append(('SQD', SGDClassifier()))
 models.append(('XGB', XGBClassifier()))
 models.append(('CatBoost', CatBoostClassifier(iterations=2, learning_rate=1, depth=2, loss_function='Logloss')))
+# models.append(('BNB', BernoulliNB()))
+# models.append(('RC', RidgeClassifier()))
+# models.append(('perc', Perceptron()))
+# models.append(('passive', PassiveAggressiveClassifier()))
+# models.append(('nearest', NearestCentroid()))
 
 results = []
 names = []
