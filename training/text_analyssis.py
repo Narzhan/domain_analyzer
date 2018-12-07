@@ -1,9 +1,12 @@
+import pickle
+
 import pandas
 import numpy as np
 from sklearn.feature_selection import chi2
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics import accuracy_score, classification_report
 #from tensorflow import confusion_matrix
+import matplotlib.pyplot as plt
 
 dataset = pandas.read_csv("text_test_data.csv", index_col=2, encoding='utf-8', delimiter=";", engine="python")
 dataset = dataset.replace(np.nan, '', regex=True)
@@ -15,11 +18,20 @@ dataset = dataset.replace(np.nan, '', regex=True)
 # weights_df.sort_values(by='weight', ascending=False).head(20)
 # print(weights_df)
 
-tfidf = TfidfVectorizer(min_df=50, norm='l2',sublinear_tf=True)
+# features = pickle.load(open("tfidf1.pkl", 'rb'))
+tfidf = TfidfVectorizer(max_df=0.8, min_df=0.2, analyzer='word' ,stop_words="english")
+# tfidf = TfidfVectorizer(
+#             min_df=6, max_features=None, strip_accents='unicode',
+#             analyzer="word",
+#             use_idf=1, smooth_idf=1, sublinear_tf=1)
 features = tfidf.fit_transform(dataset.text)
 features_names = tfidf.get_feature_names()
 labels = dataset.label
+# pickle.dump(features, open("tfidf1.pkl", "wb"))
+
 print(features.shape)
+dataset=None
+D= np.asarray(features)
 
 
 def top_tfidf_feats(row, features, top_n=25):
@@ -37,37 +49,39 @@ def top_feats_in_doc(Xtr, features, row_id, top_n=25):
     return top_tfidf_feats(row, features, top_n)
 
 
-def top_mean_feats(Xtr, features, grp_ids="all", min_tfidf=0.1, top_n=25):
+def top_mean_feats(Xtr, features, grp_ids=None, min_tfidf=0.1, top_n=25):
     ''' Return the top n features that on average are most important amongst documents in rows
         indentified by indices in grp_ids. '''
-    if isinstance(grp_ids, list):
+    if grp_ids:
         D = Xtr[grp_ids].toarray()
     else:
-    	D = np.asarray(Xtr)
-        #D = Xtr.toarray() numpy.asarray() 
-    Xtr = None
+        # D = np.asarray(Xtr)
+        D = Xtr.toarray()
+
     D[D < min_tfidf] = 0
     tfidf_means = np.mean(D, axis=0)
     return top_tfidf_feats(tfidf_means, features, top_n)
 
-def top_feats_by_class(Xtr, y, features, min_tfidf=0.1, top_n=25):
+
+def top_feats_by_class(Xtr, y, features, min_tfidf=0.1, top_n=30):
     ''' Return a list of dfs, where each df holds top_n features and their mean tfidf value
         calculated across documents with the same class label. '''
     dfs = []
     labels = np.unique(y)
     for label in labels:
-        ids = np.where(y==label)
+        ids = np.where(y == label)
         feats_df = top_mean_feats(Xtr, features, ids, min_tfidf=min_tfidf, top_n=top_n)
         feats_df.label = label
         dfs.append(feats_df)
     return dfs
+
 
 def plot_tfidf_classfeats_h(dfs):
     ''' Plot the data frames returned by the function plot_tfidf_classfeats(). '''
     fig = plt.figure(figsize=(12, 9), facecolor="w")
     x = np.arange(len(dfs[0]))
     for i, df in enumerate(dfs):
-        ax = fig.add_subplot(1, len(dfs), i+1)
+        ax = fig.add_subplot(1, len(dfs), i + 1)
         ax.spines["top"].set_visible(False)
         ax.spines["right"].set_visible(False)
         ax.set_frame_on(False)
@@ -75,10 +89,10 @@ def plot_tfidf_classfeats_h(dfs):
         ax.get_yaxis().tick_left()
         ax.set_xlabel("Mean Tf-Idf Score", labelpad=16, fontsize=14)
         ax.set_title("label = " + str(df.label), fontsize=16)
-        ax.ticklabel_format(axis='x', style='sci', scilimits=(-2,2))
+        ax.ticklabel_format(axis='x', style='sci', scilimits=(-2, 2))
         ax.barh(x, df.tfidf, align='center', color='#3F5D7D')
         ax.set_yticks(x)
-        ax.set_ylim([-1, x[-1]+1])
+        ax.set_ylim([-1, x[-1] + 1])
         yticks = ax.set_yticklabels(df.feature)
         plt.subplots_adjust(bottom=0.09, right=0.97, left=0.15, top=0.95, wspace=0.52)
     plt.show()
@@ -86,7 +100,8 @@ def plot_tfidf_classfeats_h(dfs):
 
 # print(top_feats_in_doc(features, features_names, 42))
 # print(top_mean_feats(features,features_names))
-print(top_feats_by_class(features, labels, features_names))
+# print(top_feats_by_class(features, labels, features_names))
+plot_tfidf_classfeats_h(top_feats_by_class(features, labels, features_names))
 
 
 # from sklearn.model_selection import train_test_split

@@ -1,7 +1,10 @@
 import pandas
 import time
+import numpy as np
+from scipy import  sparse
 from pandas.plotting import scatter_matrix
 import matplotlib.pyplot as plt
+from sklearn.feature_extraction.text import TfidfVectorizer
 from xgboost import XGBClassifier
 from catboost import CatBoostClassifier
 from sklearn import model_selection
@@ -48,79 +51,85 @@ print(dataset.groupby("label").size())
 # scatter_matrix(dataset)
 # plt.show()
 
+test_dataset = pandas.read_csv("text_test_data2.csv", index_col=2, encoding='utf-8', delimiter=";", engine="python")
+test_dataset = test_dataset.replace(np.nan, '', regex=True)
+test_dataset= test_dataset.where(test_dataset.values==dataset.values)
+X_train_t, X_test_t, y_train_t, y_test_t = model_selection.train_test_split(test_dataset['text'], test_dataset['label'], random_state = 0)
+tfidf = TfidfVectorizer(sublinear_tf=True, min_df=5, norm='l2', encoding='latin-1', stop_words='english')
+features = tfidf.fit_transform(X_train_t)
 
 array = dataset.values
 X = array[:, 0:11]
 Y = array[:, 11]
 validation_size = 0.20
 seed = 7
-X_train, X_validation, Y_train, Y_validation = model_selection.train_test_split(X, Y, test_size=validation_size,
+X_train, X_validation, Y_train, Y_validation = model_selection.train_test_split(X, Y,
                                                                                 random_state=seed)
-
+X_train = sparse.hstack([features, X_train])
 scoring = 'accuracy'
 
 print("Variances: {}".format(dataset.var()))
 print("Correlations: {}".format(dataset.corr()))
-rf_exp = ExtraTreesClassifier(n_estimators=50)
-rf_exp = rf_exp.fit(X_train, Y_train)
-importances = list(rf_exp.feature_importances_)
-feature_importances = [(feature, round(importance, 2)) for feature, importance in zip(list(dataset), importances)]
-feature_importances = sorted(feature_importances, key=lambda x: x[1], reverse=True)
-[print('Variable(Extra treee classifier) : {:20} Importance: {}'.format(*pair)) for pair in feature_importances]
-
-rf_exp = DecisionTreeClassifier()
-rf_exp = rf_exp.fit(X_train, Y_train)
-importances = list(rf_exp.feature_importances_)
-feature_importances = [(feature, round(importance, 2)) for feature, importance in zip(list(dataset), importances)]
-feature_importances = sorted(feature_importances, key=lambda x: x[1], reverse=True)
-[print('Variable(decision treee classifier) : {:20} Importance: {}'.format(*pair)) for pair in feature_importances]
-
-
-rf_exp = GradientBoostingClassifier()
-rf_exp = rf_exp.fit(X_train, Y_train)
-importances = list(rf_exp.feature_importances_)
-feature_importances = [(feature, round(importance, 2)) for feature, importance in zip(list(dataset), importances)]
-feature_importances = sorted(feature_importances, key=lambda x: x[1], reverse=True)
-[print('Variable(GradientBoostingClassifier) : {:20} Importance: {}'.format(*pair)) for pair in feature_importances]
-
-# rf_exp = RandomForestRegressor(n_estimators=1000, random_state=100)
-# rf_exp.fit(X_train, Y_train)
+# rf_exp = ExtraTreesClassifier(n_estimators=50)
+# rf_exp = rf_exp.fit(X_train, Y_train)
 # importances = list(rf_exp.feature_importances_)
 # feature_importances = [(feature, round(importance, 2)) for feature, importance in zip(list(dataset), importances)]
 # feature_importances = sorted(feature_importances, key=lambda x: x[1], reverse=True)
-# [print('Variable(Random forrest regressor) : {:20} Importance: {}'.format(*pair)) for pair in feature_importances]
-
-model = SelectFromModel(rf_exp, prefit=True)
-X_new = model.transform(X_train)
-print("Select from model shape: {}".format(X_new.shape))
-
-model = SelectKBest(chi2, k=5)
-fit = model.fit(X_train, Y_train)
-print("Select k best priorities: {}".format(fit.scores_))
-X_new=fit.transform(X_train)
-print("Select k best with chi2: {}".format(X_new.shape))
-
-lsvc = LinearSVC(C=0.01, penalty="l1", dual=False,max_iter=2000).fit(X, Y)
-model = SelectFromModel(lsvc, prefit=True)
-X_new = model.transform(X)
-print("Linear SVC: {}".format(X_new.shape))
-print(model.get_support())
-
-estimator = LogisticRegression(solver='lbfgs')
-selector = RFE(estimator, 5)
-selector = selector.fit(X, Y)
-print("RFE count features: {}, features: {}, ranking: {}".format(selector.n_features_, selector.support_, selector.ranking_))
-
-pca = decomposition.PCA(n_components=12)
-fit = pca.fit(X_train, Y_train)
-X_new = pca.transform(X_train)
-print("PCA: {}".format(X_new.shape))
-# print("PCA components: {}".format(fit.components_))
-# print("PCA variance: {}".format(fit.explained_variance_ratio_))
-
-ica=FastICA(n_components=12, random_state=0)
-x_reduced=ica.fit_transform(X_train)
-print("ICA: {}".format(x_reduced.shape))
+# [print('Variable(Extra treee classifier) : {:20} Importance: {}'.format(*pair)) for pair in feature_importances]
+#
+# rf_exp = DecisionTreeClassifier()
+# rf_exp = rf_exp.fit(X_train, Y_train)
+# importances = list(rf_exp.feature_importances_)
+# feature_importances = [(feature, round(importance, 2)) for feature, importance in zip(list(dataset), importances)]
+# feature_importances = sorted(feature_importances, key=lambda x: x[1], reverse=True)
+# [print('Variable(decision treee classifier) : {:20} Importance: {}'.format(*pair)) for pair in feature_importances]
+#
+#
+# rf_exp = GradientBoostingClassifier()
+# rf_exp = rf_exp.fit(X_train, Y_train)
+# importances = list(rf_exp.feature_importances_)
+# feature_importances = [(feature, round(importance, 2)) for feature, importance in zip(list(dataset), importances)]
+# feature_importances = sorted(feature_importances, key=lambda x: x[1], reverse=True)
+# [print('Variable(GradientBoostingClassifier) : {:20} Importance: {}'.format(*pair)) for pair in feature_importances]
+#
+# # rf_exp = RandomForestRegressor(n_estimators=1000, random_state=100)
+# # rf_exp.fit(X_train, Y_train)
+# # importances = list(rf_exp.feature_importances_)
+# # feature_importances = [(feature, round(importance, 2)) for feature, importance in zip(list(dataset), importances)]
+# # feature_importances = sorted(feature_importances, key=lambda x: x[1], reverse=True)
+# # [print('Variable(Random forrest regressor) : {:20} Importance: {}'.format(*pair)) for pair in feature_importances]
+#
+# model = SelectFromModel(rf_exp, prefit=True)
+# X_new = model.transform(X_train)
+# print("Select from model shape: {}".format(X_new.shape))
+#
+# model = SelectKBest(chi2, k=5)
+# fit = model.fit(X_train, Y_train)
+# print("Select k best priorities: {}".format(fit.scores_))
+# X_new=fit.transform(X_train)
+# print("Select k best with chi2: {}".format(X_new.shape))
+#
+# lsvc = LinearSVC(C=0.01, penalty="l1", dual=False,max_iter=2000).fit(X, Y)
+# model = SelectFromModel(lsvc, prefit=True)
+# X_new = model.transform(X)
+# print("Linear SVC: {}".format(X_new.shape))
+# print(model.get_support())
+#
+# estimator = LogisticRegression(solver='lbfgs')
+# selector = RFE(estimator, 5)
+# selector = selector.fit(X, Y)
+# print("RFE count features: {}, features: {}, ranking: {}".format(selector.n_features_, selector.support_, selector.ranking_))
+#
+# pca = decomposition.PCA(n_components=12)
+# fit = pca.fit(X_train, Y_train)
+# X_new = pca.transform(X_train)
+# print("PCA: {}".format(X_new.shape))
+# # print("PCA components: {}".format(fit.components_))
+# # print("PCA variance: {}".format(fit.explained_variance_ratio_))
+#
+# ica=FastICA(n_components=12, random_state=0)
+# x_reduced=ica.fit_transform(X_train)
+# print("ICA: {}".format(x_reduced.shape))
 
 models = []
 # from sklearn.preprocessing import MinMaxScaler
