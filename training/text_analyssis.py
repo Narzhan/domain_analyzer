@@ -19,7 +19,7 @@ dataset = dataset.replace(np.nan, '', regex=True)
 # print(weights_df)
 
 # features = pickle.load(open("tfidf1.pkl", 'rb'))
-tfidf = TfidfVectorizer(max_df=0.8, min_df=0.2, analyzer='word' ,stop_words="english")
+tfidf = TfidfVectorizer(min_df=0.2, analyzer='word', stop_words="english")
 # tfidf = TfidfVectorizer(
 #             min_df=6, max_features=None, strip_accents='unicode',
 #             analyzer="word",
@@ -30,9 +30,7 @@ labels = dataset.label
 # pickle.dump(features, open("tfidf1.pkl", "wb"))
 
 print(features.shape)
-dataset=None
-D= np.asarray(features)
-
+dataset = None
 
 def top_tfidf_feats(row, features, top_n=25):
     ''' Get top n tfidf values in row and return them with their corresponding feature names.'''
@@ -49,7 +47,7 @@ def top_feats_in_doc(Xtr, features, row_id, top_n=25):
     return top_tfidf_feats(row, features, top_n)
 
 
-def top_mean_feats(Xtr, features, grp_ids=None, min_tfidf=0.1, top_n=25):
+def top_mean_feats(Xtr, features, grp_ids=None, min_tfidf=0.1, top_n=30):
     ''' Return the top n features that on average are most important amongst documents in rows
         indentified by indices in grp_ids. '''
     if grp_ids:
@@ -80,6 +78,7 @@ def plot_tfidf_classfeats_h(dfs):
     ''' Plot the data frames returned by the function plot_tfidf_classfeats(). '''
     fig = plt.figure(figsize=(12, 9), facecolor="w")
     x = np.arange(len(dfs[0]))
+    transaltion = {"0": "čisté", "1": "škodlivé"}
     for i, df in enumerate(dfs):
         ax = fig.add_subplot(1, len(dfs), i + 1)
         ax.spines["top"].set_visible(False)
@@ -87,8 +86,8 @@ def plot_tfidf_classfeats_h(dfs):
         ax.set_frame_on(False)
         ax.get_xaxis().tick_bottom()
         ax.get_yaxis().tick_left()
-        ax.set_xlabel("Mean Tf-Idf Score", labelpad=16, fontsize=14)
-        ax.set_title("label = " + str(df.label), fontsize=16)
+        ax.set_xlabel("Průměrné Tf-Idf Skore", labelpad=16, fontsize=14)
+        ax.set_title(transaltion[str(df.label)], fontsize=16)
         ax.ticklabel_format(axis='x', style='sci', scilimits=(-2, 2))
         ax.barh(x, df.tfidf, align='center', color='#3F5D7D')
         ax.set_yticks(x)
@@ -100,8 +99,8 @@ def plot_tfidf_classfeats_h(dfs):
 
 # print(top_feats_in_doc(features, features_names, 42))
 # print(top_mean_feats(features,features_names))
-# print(top_feats_by_class(features, labels, features_names))
-plot_tfidf_classfeats_h(top_feats_by_class(features, labels, features_names))
+print(top_feats_by_class(features, labels, features_names))
+# plot_tfidf_classfeats_h(top_feats_by_class(features, labels, features_names))
 
 
 # from sklearn.model_selection import train_test_split
