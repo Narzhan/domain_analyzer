@@ -40,7 +40,7 @@ from sklearn.feature_selection import f_regression
 from sklearn.ensemble import BaggingClassifier
 
 # dataset = pandas.read_csv("result.csv")
-dataset = pandas.read_csv("test_data2.csv", index_col=12)
+dataset = pandas.read_csv("test_data.csv", index_col=12)
 print(dataset.shape)
 print(round(dataset.describe(), 2))
 print(dataset.groupby("label").size())
@@ -51,21 +51,20 @@ print(dataset.groupby("label").size())
 # scatter_matrix(dataset)
 # plt.show()
 
-test_dataset = pandas.read_csv("text_test_data2.csv", index_col=2, encoding='utf-8', delimiter=";", engine="python")
+test_dataset = pandas.read_csv("text_test_data.csv", index_col=2, encoding='utf-8', delimiter=";", engine="python")
 test_dataset = test_dataset.replace(np.nan, '', regex=True)
-test_dataset= test_dataset.where(test_dataset.values==dataset.values)
-X_train_t, X_test_t, y_train_t, y_test_t = model_selection.train_test_split(test_dataset['text'], test_dataset['label'], random_state = 0)
-tfidf = TfidfVectorizer(sublinear_tf=True, min_df=5, norm='l2', encoding='latin-1', stop_words='english')
-features = tfidf.fit_transform(X_train_t)
+tfidf = TfidfVectorizer(min_df=0.2, analyzer='word', stop_words="english")
+features = tfidf.fit_transform(test_dataset.text)
 
 array = dataset.values
 X = array[:, 0:11]
 Y = array[:, 11]
+X = sparse.hstack([features, X])
 validation_size = 0.20
 seed = 7
-X_train, X_validation, Y_train, Y_validation = model_selection.train_test_split(X, Y,
+X_train, X_validation, Y_train, Y_validation = model_selection.train_test_split(X, Y, test_size=validation_size,
                                                                                 random_state=seed)
-X_train = sparse.hstack([features, X_train])
+X_train = X_train.toarray()
 scoring = 'accuracy'
 
 print("Variances: {}".format(dataset.var()))

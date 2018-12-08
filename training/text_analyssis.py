@@ -4,7 +4,7 @@ import pandas
 import numpy as np
 from sklearn.feature_selection import chi2
 from sklearn.feature_extraction.text import TfidfVectorizer
-from sklearn.metrics import accuracy_score, classification_report
+from sklearn.metrics import accuracy_score, classification_report, confusion_matrix
 #from tensorflow import confusion_matrix
 import matplotlib.pyplot as plt
 
@@ -18,16 +18,10 @@ dataset = dataset.replace(np.nan, '', regex=True)
 # weights_df.sort_values(by='weight', ascending=False).head(20)
 # print(weights_df)
 
-# features = pickle.load(open("tfidf1.pkl", 'rb'))
 tfidf = TfidfVectorizer(min_df=0.2, analyzer='word', stop_words="english")
-# tfidf = TfidfVectorizer(
-#             min_df=6, max_features=None, strip_accents='unicode',
-#             analyzer="word",
-#             use_idf=1, smooth_idf=1, sublinear_tf=1)
 features = tfidf.fit_transform(dataset.text)
 features_names = tfidf.get_feature_names()
 labels = dataset.label
-# pickle.dump(features, open("tfidf1.pkl", "wb"))
 
 print(features.shape)
 dataset = None
@@ -99,15 +93,16 @@ def plot_tfidf_classfeats_h(dfs):
 
 # print(top_feats_in_doc(features, features_names, 42))
 # print(top_mean_feats(features,features_names))
-print(top_feats_by_class(features, labels, features_names))
+#print(top_feats_by_class(features, labels, features_names))
 # plot_tfidf_classfeats_h(top_feats_by_class(features, labels, features_names))
 
 
-# from sklearn.model_selection import train_test_split
-# from sklearn.feature_extraction.text import CountVectorizer
-# from sklearn.feature_extraction.text import TfidfTransformer
-# from sklearn.naive_bayes import MultinomialNB
-# from sklearn.linear_model import LogisticRegression
+from sklearn.model_selection import train_test_split
+from sklearn.feature_extraction.text import CountVectorizer
+from sklearn.feature_extraction.text import TfidfTransformer
+from sklearn.naive_bayes import MultinomialNB
+from sklearn.linear_model import LogisticRegression
+X_train, X_test, y_train, y_test = train_test_split(features, labels, random_state = 0, test_size=0.2)
 # X_train, X_test, y_train, y_test = train_test_split(dataset['text'], dataset['label'], random_state = 0)
 # tfidf = TfidfVectorizer(sublinear_tf=True, min_df=5, norm='l2', encoding='latin-1', stop_words='english')
 # features = tfidf.fit_transform(X_train)
@@ -118,11 +113,12 @@ print(top_feats_by_class(features, labels, features_names))
 # tfidf_transformer = TfidfTransformer()
 # X_train_tfidf = tfidf_transformer.fit_transform(X_train_counts)
 # clf = LogisticRegression().fit(X_train_tfidf, y_train)
-#
-# predictions = clf.predict(count_vect.transform(X_test))
-# print(accuracy_score(y_test, predictions))
-# print(confusion_matrix(y_test, predictions))
-# print(classification_report(y_test, predictions))
+clf = LogisticRegression().fit(X_train, y_train)
+
+predictions = clf.predict(tfidf.transform(X_test))
+print(accuracy_score(y_test, predictions))
+print(confusion_matrix(y_test, predictions))
+print(classification_report(y_test, predictions))
 
 # import csv
 #
