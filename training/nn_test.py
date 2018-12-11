@@ -1,6 +1,9 @@
 import numpy as np # linear algebra
 import pandas as pd
 import time
+
+from scipy import sparse
+from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
 from keras.models import Sequential
@@ -17,10 +20,15 @@ from keras import backend as K
 # dataset= pd.read_csv("result.csv")
 def load_data(cols: list):
     dataset = pd.read_csv("test_data.csv", index_col=len(cols) - 1, usecols=cols)
+    test_dataset = pd.read_csv("text_test_data.csv", index_col=2, encoding='utf-8', delimiter=";", engine="python")
+    test_dataset = test_dataset.replace(np.nan, '', regex=True)
+    tfidf = TfidfVectorizer(min_df=0.2, analyzer='word', stop_words="english")
+    features = tfidf.fit_transform(test_dataset.text)
 
     array = dataset.values
     X = array[:, 0:len(cols) - 2]
     Y = array[:, len(cols) - 2]
+    X = sparse.hstack([features, X])
 
     X_train, X_test, y_train, y_test = train_test_split(X, Y, test_size=0.2)
     return X_train, X_test, y_train, y_test, len(cols)
@@ -49,6 +57,7 @@ def lear_nn(cols: list):
     y_pred = classifier.predict(X_test)
     y_pred = (y_pred > 0.5)
     cm = confusion_matrix(y_test, y_pred)
+    print(cm)
     diagonal_sum = cm.trace()
     sum_of_all_elements = cm.sum()
     print(diagonal_sum / sum_of_all_elements)
@@ -58,6 +67,8 @@ if __name__ == '__main__':
     columns = ["ranking_response", 'full_path', 'part_path', 'about',
                'deep_links', 'fresh', 'infection', 'pages', 'totalEstimatedMatches', 'someResultsRemoved', 'label',
                "domain"]
-    for column in ['full_path', 'about', 'deep_links', 'fresh', 'infection', 'someResultsRemoved']:
-        columns.remove(column)
-        lear_nn(columns)
+    # for column in ['full_path', 'about', 'deep_links', 'fresh', 'infection', 'someResultsRemoved']:
+    #     columns.remove(column)
+    now= time.time()
+    lear_nn(columns)
+    print(time.time()-now)
