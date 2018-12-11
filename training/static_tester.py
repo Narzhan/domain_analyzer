@@ -66,8 +66,10 @@ np.save("x.npy", X)
 np.save("y.np", Y)
 validation_size = 0.20
 seed = 7
-X_train, X_validation, Y_train, Y_validation = model_selection.train_test_split(X, Y, test_size=validation_size,
-                                                                                random_state=seed)
+X_train, X_validation, Y_train, Y_validation, indices_train, indices_test = model_selection.train_test_split(X, Y,
+                                                                                                             dataset.index,
+                                                                                                             test_size=validation_size,
+                                                                                                             random_state=seed)
 X_train = X_train.toarray()
 scoring = 'accuracy'
 
