@@ -206,9 +206,9 @@ predictions = knn.predict(X_validation.toarray())
 print(accuracy_score(Y_validation, predictions))
 print(confusion_matrix(Y_validation, predictions))
 print(classification_report(Y_validation, predictions))
-# for input, prediction, label in zip(X_validation.toarray(), predictions, Y_validation):
-#     if prediction != label:
-#         print(np.where(np.all(X == input, axis=1)), prediction, label)
+for input, prediction, label in zip(indices_test, predictions, Y_validation):
+    if prediction != label:
+        print("Domain {} with incorrect label: {}, should be: {}".format(input, prediction, label))
 
 # fig = plt.figure(figsize=(10.0, 8.0))
 # ax = fig.add_subplot(111)
