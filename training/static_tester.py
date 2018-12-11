@@ -41,6 +41,7 @@ from sklearn.ensemble import BaggingClassifier
 
 # dataset = pandas.read_csv("result.csv")
 dataset = pandas.read_csv("test_data.csv", index_col=12)
+dataset = dataset.sort_index()
 print(dataset.shape)
 print(round(dataset.describe(), 2))
 print(dataset.groupby("label").size())
@@ -53,6 +54,7 @@ print(dataset.groupby("label").size())
 
 test_dataset = pandas.read_csv("text_test_data.csv", index_col=2, encoding='utf-8', delimiter=";", engine="python")
 test_dataset = test_dataset.replace(np.nan, '', regex=True)
+test_dataset = test_dataset.sort_index()
 tfidf = TfidfVectorizer(min_df=0.2, analyzer='word', stop_words="english")
 features = tfidf.fit_transform(test_dataset.text)
 
@@ -196,10 +198,13 @@ print("Took: {}".format(time.time() - start_time))
 
 knn = KNeighborsClassifier()
 knn.fit(X_train, Y_train)
-predictions = knn.predict(X_validation)
+predictions = knn.predict(X_validation.toarray())
 print(accuracy_score(Y_validation, predictions))
 print(confusion_matrix(Y_validation, predictions))
 print(classification_report(Y_validation, predictions))
+# for input, prediction, label in zip(X_validation.toarray(), predictions, Y_validation):
+#     if prediction != label:
+#         print(np.where(np.all(X == input, axis=1)), prediction, label)
 
 # fig = plt.figure(figsize=(10.0, 8.0))
 # ax = fig.add_subplot(111)
