@@ -18,10 +18,11 @@ dataset = dataset.replace(np.nan, '', regex=True)
 # weights_df.sort_values(by='weight', ascending=False).head(20)
 # print(weights_df)
 
-tfidf = TfidfVectorizer(min_df=0.2, analyzer='word', stop_words="english")
+tfidf = TfidfVectorizer(min_df=0.2, analyzer='word', stop_words="english", ngram_range=(1, 2))
 features = tfidf.fit_transform(dataset.text)
 features_names = tfidf.get_feature_names()
 labels = dataset.label
+pickle.dump(tfidf, open("tfidf.pkl", "wb"))
 
 print(features.shape)
 dataset = None
