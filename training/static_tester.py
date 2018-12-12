@@ -1,3 +1,4 @@
+import pickle
 import pandas
 import time
 import numpy as np
@@ -61,6 +62,8 @@ if not os.path.exists("x.npy") and not os.path.exists("y.npy"):
     test_dataset = test_dataset.sort_index()
     tfidf = TfidfVectorizer(min_df=0.2, analyzer='word', stop_words="english", ngram_range=(1, 2))
     features = tfidf.fit_transform(test_dataset.text)
+    pickle.dump(tfidf, open("tfidf.pkl", "wb"))
+    # tfidf = pickle.load(open("tfidf.pkl", "rb"))
 
     array = dataset.values
     X = array[:, 0:11]
