@@ -6,6 +6,8 @@ from scipy import  sparse
 from pandas.plotting import scatter_matrix
 import matplotlib.pyplot as plt
 from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.gaussian_process import GaussianProcessClassifier
+from sklearn.neural_network import MLPClassifier
 from xgboost import XGBClassifier
 from catboost import CatBoostClassifier
 from sklearn import model_selection
@@ -167,6 +169,7 @@ models.append(('CatBoost', CatBoostClassifier(iterations=2, learning_rate=1, dep
 # models.append(('perc', Perceptron()))
 # models.append(('passive', PassiveAggressiveClassifier()))
 # models.append(('nearest', NearestCentroid()))
+# models.append(('QDA', QuadraticDiscriminantAnalysis()))
 
 results = []
 names = []
