@@ -57,13 +57,19 @@ print(dataset.groupby("label").size())
 # plt.show()
 
 if not os.path.exists("x.npy") and not os.path.exists("y.npy"):
-    test_dataset = pandas.read_csv("text_test_data.csv", index_col=2, encoding='utf-8', delimiter=";", engine="python")
-    test_dataset = test_dataset.replace(np.nan, '', regex=True)
-    test_dataset = test_dataset.sort_index()
-    tfidf = TfidfVectorizer(min_df=0.2, analyzer='word', stop_words="english", ngram_range=(1, 2))
-    features = tfidf.fit_transform(test_dataset.text)
-    pickle.dump(tfidf, open("tfidf.pkl", "wb"))
-    # tfidf = pickle.load(open("tfidf.pkl", "rb"))
+    if not os.path.exists("tfidf.pkl"):
+        test_dataset = pandas.read_csv("text_test_data.csv", index_col=2, encoding='utf-8', delimiter=";", engine="python")
+        test_dataset = test_dataset.replace(np.nan, '', regex=True)
+        test_dataset = test_dataset.sort_index()
+        tfidf = TfidfVectorizer(min_df=0.2, analyzer='word', stop_words="english", ngram_range=(1, 2))
+        features = tfidf.fit_transform(test_dataset.text)
+        pickle.dump(tfidf, open("tfidf.pkl", "wb"))
+    else:
+        test_dataset = pandas.read_csv("text_test_data.csv", index_col=2, encoding='utf-8', delimiter=";", engine="python")
+        test_dataset = test_dataset.replace(np.nan, '', regex=True)
+        test_dataset = test_dataset.sort_index()
+        tfidf = pickle.load(open("tfidf.pkl", "rb"))
+        features = tfidf.transform(test_dataset.text)
 
     array = dataset.values
     X = array[:, 0:11]
