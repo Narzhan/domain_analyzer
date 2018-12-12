@@ -1,6 +1,7 @@
 import pandas
 import time
 import numpy as np
+import os
 from scipy import  sparse
 from pandas.plotting import scatter_matrix
 import matplotlib.pyplot as plt
@@ -52,25 +53,29 @@ print(dataset.groupby("label").size())
 # scatter_matrix(dataset)
 # plt.show()
 
-test_dataset = pandas.read_csv("text_test_data.csv", index_col=2, encoding='utf-8', delimiter=";", engine="python")
-test_dataset = test_dataset.replace(np.nan, '', regex=True)
-test_dataset = test_dataset.sort_index()
-tfidf = TfidfVectorizer(min_df=0.2, analyzer='word', stop_words="english")
-features = tfidf.fit_transform(test_dataset.text)
+if not os.path.exists("x.npy") and not os.path.exists("y.npy"):
+    test_dataset = pandas.read_csv("text_test_data.csv", index_col=2, encoding='utf-8', delimiter=";", engine="python")
+    test_dataset = test_dataset.replace(np.nan, '', regex=True)
+    test_dataset = test_dataset.sort_index()
+    tfidf = TfidfVectorizer(min_df=0.2, analyzer='word', stop_words="english", ngram_range=(1, 2))
+    features = tfidf.fit_transform(test_dataset.text)
 
-array = dataset.values
-X = array[:, 0:11]
-Y = array[:, 11]
-X = sparse.hstack([features, X])
-np.save("x.npy", X)
-np.save("y.np", Y)
+    array = dataset.values
+    X = array[:, 0:11]
+    Y = array[:, 11]
+    X = sparse.hstack([features, X])
+    np.save("x.npy", X)
+    np.save("y.npy", Y)
+else:
+    X = np.load("x.npy").tolist().toarray()
+    Y = np.load("y.npy")
 validation_size = 0.20
 seed = 7
 X_train, X_validation, Y_train, Y_validation, indices_train, indices_test = model_selection.train_test_split(X, Y,
                                                                                                              dataset.index,
                                                                                                              test_size=validation_size,
                                                                                                              random_state=seed)
-X_train = X_train.toarray()
+# X_train = X_train.toarray()
 scoring = 'accuracy'
 
 print("Variances: {}".format(dataset.var()))
@@ -138,7 +143,7 @@ print("Correlations: {}".format(dataset.corr()))
 
 models = []
 # from sklearn.preprocessing import MinMaxScaler
-# scaling = MinMaxScaler(feature_range=(-1,1)).fit(X_train)
+# scaling = MinMaxScaler(feature_range=(-1, 1)).fit(X_train)
 # X_train = scaling.transform(X_train)
 # X_validation = scaling.transform(X_validation)
 
@@ -206,9 +211,9 @@ predictions = knn.predict(X_validation.toarray())
 print(accuracy_score(Y_validation, predictions))
 print(confusion_matrix(Y_validation, predictions))
 print(classification_report(Y_validation, predictions))
-for input, prediction, label in zip(indices_test, predictions, Y_validation):
-    if prediction != label:
-        print("Domain {} with incorrect label: {}, should be: {}".format(input, prediction, label))
+# for input, prediction, label in zip(indices_test, predictions, Y_validation):
+#     if prediction != label:
+#         print("Domain {} with incorrect label: {}, should be: {}".format(input, prediction, label))
 
 # fig = plt.figure(figsize=(10.0, 8.0))
 # ax = fig.add_subplot(111)
@@ -218,7 +223,7 @@ for input, prediction, label in zip(indices_test, predictions, Y_validation):
 # for tick in ax.get_xticklabels():
 #     tick.set_rotation(70)
 # plt.savefig("test_data.png")
-with open("test/result_first_test2.txt", "w") as file:
+with open("test/result_first_test.txt", "w") as file:
     for name, result in zip(names, results):
         file.write("{},{}\n".format(name, result))
 # plt.show()

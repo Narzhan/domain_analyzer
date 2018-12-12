@@ -33,7 +33,6 @@ class MlTester:
         self.scoring = 'accuracy'
         self.seed = 7
         self.X_train, self.X_validation, self.Y_train, self.Y_validation, self.columes = self.load_data()
-        print(self.columes)
         self.result = {}
         self.test_time=""
 
@@ -49,7 +48,7 @@ class MlTester:
         return pandas.read_csv(filename, index_col=len(self.columns)-1, usecols=self.columns)
 
     def load_data(self):
-        dataset = self.prepare_data("test_data2.csv")
+        dataset = self.prepare_data("test_data.csv")
         array = dataset.values
         X = array[:, 0:len(self.columns)-2]
         Y = array[:, len(self.columns)-2]
@@ -173,5 +172,7 @@ if __name__ == '__main__':
     # for column in ['full_path', 'about', 'deep_links', 'fresh', 'infection', 'someResultsRemoved']:
     #     columns.remove(column)
     tester = MlTester(columns)
-    tester.train_best_model()
+    print(tester.X_train)
+    print(tester.Y_train)
+    # tester.train_best_model()
     # tester.persist_results()
