@@ -56,8 +56,8 @@ print(dataset.groupby("label").size())
 # scatter_matrix(dataset)
 # plt.show()
 
-if not os.path.exists("x.npy") and not os.path.exists("y.npy"):
-    if not os.path.exists("tfidf.pkl"):
+if not os.path.exists("binaries/x(0.1).npy") and not os.path.exists("binaries/y(0.1).npy"):
+    if not os.path.exists("binaries/tfidf(0.1).pkl"):
         test_dataset = pandas.read_csv("text_test_data.csv", index_col=2, encoding='utf-8', delimiter=";", engine="python")
         test_dataset = test_dataset.replace(np.nan, '', regex=True)
         test_dataset = test_dataset.sort_index()
@@ -68,7 +68,7 @@ if not os.path.exists("x.npy") and not os.path.exists("y.npy"):
         test_dataset = pandas.read_csv("text_test_data.csv", index_col=2, encoding='utf-8', delimiter=";", engine="python")
         test_dataset = test_dataset.replace(np.nan, '', regex=True)
         test_dataset = test_dataset.sort_index()
-        tfidf = pickle.load(open("tfidf.pkl", "rb"))
+        tfidf = pickle.load(open("binaries/tfidf(0.1).pkl", "rb"))
         features = tfidf.transform(test_dataset.text)
 
     array = dataset.values
@@ -78,8 +78,8 @@ if not os.path.exists("x.npy") and not os.path.exists("y.npy"):
     np.save("x.npy", X)
     np.save("y.npy", Y)
 else:
-    X = np.load("x.npy").tolist().toarray()
-    Y = np.load("y.npy")
+    X = np.load("binaries/x(0.1).npy").tolist().toarray()
+    Y = np.load("binaries/y(0.1).npy")
 validation_size = 0.20
 seed = 7
 X_train, X_validation, Y_train, Y_validation, indices_train, indices_test = model_selection.train_test_split(X, Y,
