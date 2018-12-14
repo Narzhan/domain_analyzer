@@ -67,6 +67,7 @@ for idx, topic in lda_model.print_topics(-1):
 #     print("\nScore: {}\t \nTopic: {}".format(score, lda_model_tfidf.print_topic(index, 10)))
 unseen_document = "The mobile web version is similar to the mobile app. Stay on Amazon.com for access to all the features of the main <b>Amazon</b> website. Previous page . Next page. Back to School essentials. Shop all. Deal of the Day. $139.99 $ 139. 99. See more deals. Back to School picks. Favorites from parents, teachers &amp; teens. Online shopping from a great selection at Books Store.Amazon.com</b> je jedna z nejpopulárnějších internetových značek na světě. Popularitou se může zařadit i ke značkám jako jsou ebay, AOL a v menší míře například i Google. Amazon.com(nebo Amazon.co.uk) je symbolem rozvoje internetu a konkrétně nakupování na internetu.Descubre y compra online: electrónica, moda, hogar, libros, deporte y mucho más a precios bajos en Amazon.es. Envío gratis con <b>Amazon</b> Premium."
 bow_vector = dictionary.doc2bow(preprocess(unseen_document))
+# print(lda_model.print_topic(max(lda_vector, key=lambda item: item[1])[0]))
 
 for index, score in sorted(lda_model[bow_vector], key=lambda tup: -1 * tup[1]):
     print("Score: {}\t Topic: {}".format(score, lda_model.print_topic(index, 5)))
