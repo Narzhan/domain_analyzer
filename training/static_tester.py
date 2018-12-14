@@ -6,7 +6,7 @@ import os
 from scipy import  sparse
 from pandas.plotting import scatter_matrix
 import matplotlib.pyplot as plt
-from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.feature_extraction.text import TfidfVectorizer, HashingVectorizer
 from sklearn.gaussian_process import GaussianProcessClassifier
 from sklearn.neural_network import MLPClassifier
 from xgboost import XGBClassifier
@@ -56,7 +56,7 @@ print(dataset.groupby("label").size())
 # scatter_matrix(dataset)
 # plt.show()
 
-if not os.path.exists("binaries/x(0.1).npy") and not os.path.exists("binaries/y(0.1).npy"):
+if not os.path.exists("binaries/x(0.3).npy") and not os.path.exists("binaries/y(0.3).npy"):
     if not os.path.exists("binaries/tfidf(0.1).pkl"):
         test_dataset = pandas.read_csv("text_test_data.csv", index_col=2, encoding='utf-8', delimiter=";", engine="python")
         test_dataset = test_dataset.replace(np.nan, '', regex=True)
@@ -65,16 +65,19 @@ if not os.path.exists("binaries/x(0.1).npy") and not os.path.exists("binaries/y(
         features = tfidf.fit_transform(test_dataset.text)
         pickle.dump(tfidf, open("tfidf.pkl", "wb"))
     else:
-        test_dataset = pandas.read_csv("text_test_data.csv", index_col=2, encoding='utf-8', delimiter=";", engine="python")
+        test_dataset = pandas.read_csv("text_test_data.csv", index_col=2, encoding='utf-8', delimiter=";",
+                                       engine="python")
         test_dataset = test_dataset.replace(np.nan, '', regex=True)
         test_dataset = test_dataset.sort_index()
         tfidf = pickle.load(open("binaries/tfidf(0.1).pkl", "rb"))
         features = tfidf.transform(test_dataset.text)
+        hash_vec = HashingVectorizer(n_features=100, stop_words="english", ngram_range=(1, 2))
+        hashed_features = hash_vec.transform(test_dataset.text)
 
     array = dataset.values
     X = array[:, 0:11]
     Y = array[:, 11]
-    X = sparse.hstack([features, X])
+    X = sparse.hstack([features, hashed_features, X])
     np.save("x.npy", X)
     np.save("y.npy", Y)
 else:
@@ -86,7 +89,7 @@ X_train, X_validation, Y_train, Y_validation, indices_train, indices_test = mode
                                                                                                              dataset.index,
                                                                                                              test_size=validation_size,
                                                                                                              random_state=seed)
-# X_train = X_train.toarray()
+X_train = X_train.toarray()
 scoring = 'accuracy'
 
 print("Variances: {}".format(dataset.var()))
@@ -173,12 +176,12 @@ models.append(('GBC', GradientBoostingClassifier()))
 models.append(('SQD', SGDClassifier()))
 models.append(('XGB', XGBClassifier()))
 models.append(('CatBoost', CatBoostClassifier(iterations=2, learning_rate=1, depth=2, loss_function='Logloss')))
-# models.append(('BNB', BernoulliNB()))
-# models.append(('RC', RidgeClassifier()))
-# models.append(('perc', Perceptron()))
-# models.append(('passive', PassiveAggressiveClassifier()))
-# models.append(('nearest', NearestCentroid()))
-# models.append(('QDA', QuadraticDiscriminantAnalysis()))
+models.append(('BNB', BernoulliNB()))
+models.append(('RC', RidgeClassifier()))
+models.append(('perc', Perceptron()))
+models.append(('passive', PassiveAggressiveClassifier()))
+models.append(('nearest', NearestCentroid()))
+models.append(('QDA', QuadraticDiscriminantAnalysis()))
 
 results = []
 names = []
@@ -235,7 +238,7 @@ print(classification_report(Y_validation, predictions))
 # for tick in ax.get_xticklabels():
 #     tick.set_rotation(70)
 # plt.savefig("test_data.png")
-with open("test/result_first_test.txt", "w") as file:
+with open("test/minimal_test.txt", "w") as file:
     for name, result in zip(names, results):
         file.write("{},{}\n".format(name, result))
 # plt.show()
