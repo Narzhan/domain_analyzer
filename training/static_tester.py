@@ -3,6 +3,7 @@ import pandas
 import time
 import numpy as np
 import os
+import gensim
 from scipy import  sparse
 from pandas.plotting import scatter_matrix
 import matplotlib.pyplot as plt
@@ -71,13 +72,14 @@ if not os.path.exists("binaries/x(0.3).npy") and not os.path.exists("binaries/y(
         test_dataset = test_dataset.sort_index()
         tfidf = pickle.load(open("binaries/tfidf(0.1).pkl", "rb"))
         features = tfidf.transform(test_dataset.text)
-        hash_vec = HashingVectorizer(n_features=100, stop_words="english", ngram_range=(1, 2))
-        hashed_features = hash_vec.transform(test_dataset.text)
+        lda_model = gensim.models.LdaMulticore.load("lda_model.pkl")
+        bow_corpus = pickle.load(open("gensim_lda/bow_corpus.pkl", "rb"))
+        topics = np.array([doc_topics[0][0] for doc_topics in lda_model.get_document_topics(bow_corpus)])
 
     array = dataset.values
     X = array[:, 0:11]
     Y = array[:, 11]
-    X = sparse.hstack([features, hashed_features, X])
+    X = sparse.hstack([features, topics, X])
     np.save("x.npy", X)
     np.save("y.npy", Y)
 else:
