@@ -72,14 +72,18 @@ if not os.path.exists("binaries/x(0.3).npy") and not os.path.exists("binaries/y(
         test_dataset = test_dataset.sort_index()
         tfidf = pickle.load(open("binaries/tfidf(0.1).pkl", "rb"))
         features = tfidf.transform(test_dataset.text)
-        lda_model = gensim.models.LdaMulticore.load("lda_model.pkl")
+        test_dataset, tfidf = None, None
+        lda_model = gensim.models.LdaMulticore.load("gensim_lda/lda_model_20.pkl")
         bow_corpus = pickle.load(open("gensim_lda/bow_corpus.pkl", "rb"))
-        topics = np.array([doc_topics[0][0] for doc_topics in lda_model.get_document_topics(bow_corpus)])
+        topics = np.array([[doc_topics[0][0]] for doc_topics in lda_model.get_document_topics(bow_corpus)])
+        pickle.dump(topics, open("topics_20.pkl", "wb"))
+        lda_model, bow_corpus = None, None
 
     array = dataset.values
     X = array[:, 0:11]
     Y = array[:, 11]
     X = sparse.hstack([features, topics, X])
+    features, topics, array = None, None, None
     np.save("x.npy", X)
     np.save("y.npy", Y)
 else:
@@ -91,6 +95,7 @@ X_train, X_validation, Y_train, Y_validation, indices_train, indices_test = mode
                                                                                                              dataset.index,
                                                                                                              test_size=validation_size,
                                                                                                              random_state=seed)
+X, Y, = None, None
 X_train = X_train.toarray()
 scoring = 'accuracy'
 
