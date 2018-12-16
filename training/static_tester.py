@@ -50,6 +50,7 @@ dataset = dataset.sort_index()
 print(dataset.shape)
 print(round(dataset.describe(), 2))
 print(dataset.groupby("label").size())
+del dataset["ranking_response"]
 # dataset.drop(['label'], axis=1).plot(kind='box', subplots=True, layout=(3,4), sharex=False, sharey=False)
 # plt.show()
 # dataset.drop(['label'], axis=1).hist()
@@ -64,6 +65,10 @@ if not os.path.exists("binaries/x(0.3).npy") and not os.path.exists("binaries/y(
         test_dataset = test_dataset.sort_index()
         tfidf = TfidfVectorizer(min_df=0.2, analyzer='word', stop_words="english", ngram_range=(1, 2))
         features = tfidf.fit_transform(test_dataset.text)
+        lda_model = gensim.models.LdaMulticore.load("gensim_lda/lda_model_20.pkl")
+        bow_corpus = pickle.load(open("gensim_lda/bow_corpus.pkl", "rb"))
+        topics = np.array([[doc_topics[0][0]] for doc_topics in lda_model.get_document_topics(bow_corpus)])
+        lda_model, bow_corpus = None, None
         pickle.dump(tfidf, open("tfidf.pkl", "wb"))
     else:
         test_dataset = pandas.read_csv("text_test_data.csv", index_col=2, encoding='utf-8', delimiter=";",
@@ -73,16 +78,13 @@ if not os.path.exists("binaries/x(0.3).npy") and not os.path.exists("binaries/y(
         tfidf = pickle.load(open("binaries/tfidf(0.1).pkl", "rb"))
         features = tfidf.transform(test_dataset.text)
         test_dataset, tfidf = None, None
-        lda_model = gensim.models.LdaMulticore.load("gensim_lda/lda_model_20.pkl")
-        bow_corpus = pickle.load(open("gensim_lda/bow_corpus.pkl", "rb"))
-        topics = np.array([[doc_topics[0][0]] for doc_topics in lda_model.get_document_topics(bow_corpus)])
-        pickle.dump(topics, open("topics_20.pkl", "wb"))
-        lda_model, bow_corpus = None, None
+        topics = pickle.load(open("gensim_lda/topics_20.pkl", "rb"))
 
     array = dataset.values
-    X = array[:, 0:11]
-    Y = array[:, 11]
+    X = array[:, 0:10]
+    Y = array[:, 10]
     X = sparse.hstack([features, topics, X])
+    # X = sparse.hstack([features, X])
     features, topics, array = None, None, None
     np.save("x.npy", X)
     np.save("y.npy", Y)
