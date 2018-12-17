@@ -1,6 +1,6 @@
 import numpy as np # linear algebra
 import pandas as pd
-import time
+import time, pickle
 
 from scipy import sparse
 from sklearn.feature_extraction.text import TfidfVectorizer
@@ -20,18 +20,24 @@ from keras import backend as K
 # dataset= pd.read_csv("result.csv")
 def load_data(cols: list):
     dataset = pd.read_csv("test_data.csv", index_col=len(cols) - 1, usecols=cols)
+    dataset = dataset.sort_index()
     test_dataset = pd.read_csv("text_test_data.csv", index_col=2, encoding='utf-8', delimiter=";", engine="python")
     test_dataset = test_dataset.replace(np.nan, '', regex=True)
-    tfidf = TfidfVectorizer(min_df=0.2, analyzer='word', stop_words="english")
-    features = tfidf.fit_transform(test_dataset.text)
+    test_dataset = test_dataset.sort_index()
+    # tfidf = TfidfVectorizer(min_df=0.2, analyzer='word', stop_words="english")
+    # features = tfidf.fit_transform(test_dataset.text)
+    tfidf = pickle.load(open("binaries/tfidf(0.1).pkl", "rb"))
+    features = tfidf.transform(test_dataset.text)
+    test_dataset, tfidf = None, None
+    topics = pickle.load(open("gensim_lda/topics_25.pkl", "rb"))
 
     array = dataset.values
     X = array[:, 0:len(cols) - 2]
     Y = array[:, len(cols) - 2]
-    X = sparse.hstack([features, X])
+    X = sparse.hstack([features, topics, X])
 
     X_train, X_test, y_train, y_test = train_test_split(X, Y, test_size=0.2)
-    return X_train, X_test, y_train, y_test, len(cols)
+    return X_train, X_test, y_train, y_test, X.shape[1]
 
 
 def lear_nn(cols: list):
@@ -42,7 +48,7 @@ def lear_nn(cols: list):
     start_time = time.time()
     classifier = Sequential()
     # Adding the input layer and the first hidden layer
-    classifier.add(Dense(output_dim=6, init='uniform', activation='relu', input_dim=length - 2))
+    classifier.add(Dense(output_dim=6, init='uniform', activation='relu', input_dim=length))
     # Adding the second hidden layer
     classifier.add(Dense(output_dim=6, init='uniform', activation='relu'))
     # Adding the output layer
@@ -64,11 +70,11 @@ def lear_nn(cols: list):
 
 
 if __name__ == '__main__':
-    columns = ["ranking_response", 'full_path', 'part_path', 'about',
+    columns = ['full_path', 'part_path', 'about',
                'deep_links', 'fresh', 'infection', 'pages', 'totalEstimatedMatches', 'someResultsRemoved', 'label',
                "domain"]
     # for column in ['full_path', 'about', 'deep_links', 'fresh', 'infection', 'someResultsRemoved']:
     #     columns.remove(column)
-    now= time.time()
+    now = time.time()
     lear_nn(columns)
-    print(time.time()-now)
+    print(time.time() - now)
