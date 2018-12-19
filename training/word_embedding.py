@@ -24,7 +24,7 @@ def preprocess(text):
 # processed_docs = pickle.load(open("gensim_lda/processed_docs.pkl", "rb"))
 
 
-# Set values for various parameters
+
 feature_size = 100  # Word vector dimensionality
 window_context = 20  # Context window size
 min_word_count = 10  # Minimum word count
@@ -40,7 +40,7 @@ sample = 1e-3  # Downsample setting for frequent words
 # w2v_model = word2vec.Word2Vec.load("gensim_we/w2v_model.pkl")
 
 
-# view similar words based on gensim's model
+
 # similar_words = {search_term: [item[0] for item in w2v_model.wv.most_similar([search_term], topn=5)]
 #                   for search_term in ['malware', 'phishing', 'hoax', 'exploit', 'botnet', 'spam']}
 # print(similar_words)
@@ -67,7 +67,6 @@ def averaged_word_vectorizer(corpus, model, num_features):
     return np.array(features)
 
 
-# get document level embeddings
 # w2v_feature_array = averaged_word_vectorizer(corpus=processed_docs, model=w2v_model,
 #                                              num_features=feature_size)
 # document_array = pandas.DataFrame(w2v_feature_array)
@@ -80,8 +79,6 @@ from sklearn.cluster import AffinityPropagation, MiniBatchKMeans
 ap = MiniBatchKMeans()
 ap.fit(w2v_feature_array)
 cluster_labels = ap.labels_
-print(cluster_labels.shape)
-print(cluster_labels)
 # pickle.dump(cluster_labels, open("cluster_labels.pkl", "wb"))
 dataset.reset_index(drop=True, inplace=True)
 cluster_labels = pandas.DataFrame(cluster_labels, columns=['ClusterLabel'])
