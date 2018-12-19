@@ -79,11 +79,13 @@ if not os.path.exists("binaries/x(0.3).npy") and not os.path.exists("binaries/y(
         features = tfidf.transform(test_dataset.text)
         test_dataset, tfidf = None, None
         topics = pickle.load(open("gensim_lda/topics_20.pkl", "rb"))
+        w2v_labels = pickle.load(open("w2v_feature_array.pkl", "rb"))
+        # w2v_labels = pickle.load(open("cluster_labels.pkl", "rb")).reshape((-1,1))
 
     array = dataset.values
     X = array[:, 0:10]
     Y = array[:, 10]
-    X = sparse.hstack([features, topics, X])
+    X = sparse.hstack([features, topics, w2v_labels, X])
     # X = sparse.hstack([features, X])
     features, topics, array = None, None, None
     np.save("x.npy", X)
@@ -251,3 +253,13 @@ with open("test/minimal_test.txt", "w") as file:
     for name, result in zip(names, results):
         file.write("{},{}\n".format(name, result))
 # plt.show()
+hyper_parameters = {"Ada": {
+    "random_state": seed,
+    "n_estimators ": [50, 100, 150, 200, 250],
+    "algorithm ": ["SAMME", "SAMME.R"],
+    "learning_rate ": [0.5, 0.75, 1.0, 1.5, 2.0]
+}, "GBC": {
+    "n_estimators ": [100, 250, 200, 300, 400]
+}
+
+}
