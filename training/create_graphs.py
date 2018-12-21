@@ -110,3 +110,38 @@ def compare_graph():
         results.clear()
         names.clear()
 
+
+def outliers_box_plot():
+    l = dataset.columns.values
+    number_of_columns = 12
+    number_of_rows = len(l) - 1 / number_of_columns
+    plt.figure(figsize=(number_of_columns, 5 * number_of_rows))
+    for i in range(0, len(l)):
+        plt.subplot(number_of_rows + 1, number_of_columns, i + 1)
+        sns.set_style('whitegrid')
+        sns.boxplot(dataset[l[i]], color='green', orient='v')
+        plt.tight_layout()
+    plt.show()
+
+
+def skewness():
+    l = dataset.columns.values
+    number_of_columns = 12
+    number_of_rows = len(l) - 1 / number_of_columns
+    plt.figure(figsize=(2 * number_of_columns, 5 * number_of_rows))
+    for i in range(0, len(l)):
+        plt.subplot(number_of_rows + 1, number_of_columns, i + 1)
+        sns.distplot(dataset[l[i]], kde=True)
+    plt.show()
+
+
+# # outliers_box_plot()
+# skewness()
+import csv
+
+# with open("text_test_data.csv", "r", errors="ignore") as file:
+#     with open("text_test_data_english.csv", "w", errors="ignore") as output:
+#         reader = csv.reader(file, delimiter=";")
+#         output.write("{}\n".format(";".join(next(reader))))
+#         for row in reader:
+#             output.write("{}\n".format(";".join(row)))

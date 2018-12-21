@@ -79,13 +79,13 @@ if not os.path.exists("binaries/x(0.3).npy") and not os.path.exists("binaries/y(
         features = tfidf.transform(test_dataset.text)
         test_dataset, tfidf = None, None
         topics = pickle.load(open("gensim_lda/topics_20.pkl", "rb"))
-        w2v_labels = pickle.load(open("w2v_feature_array.pkl", "rb"))
+        # w2v_labels = pickle.load(open("w2v_feature_array.pkl", "rb"))
         # w2v_labels = pickle.load(open("cluster_labels.pkl", "rb")).reshape((-1,1))
 
     array = dataset.values
     X = array[:, 0:10]
     Y = array[:, 10]
-    X = sparse.hstack([features, topics, w2v_labels, X])
+    X = sparse.hstack([features, topics, X])
     # X = sparse.hstack([features, X])
     features, topics, array = None, None, None
     np.save("x.npy", X)
