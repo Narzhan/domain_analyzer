@@ -175,7 +175,7 @@ models = []
 models.append(('LR', LogisticRegression(solver='lbfgs', class_weight="balanced")))
 models.append(('LDA', LinearDiscriminantAnalysis()))
 models.append(('KNN', KNeighborsClassifier()))
-models.append(('DecTree', DecisionTreeClassifier()))  # gini, best
+models.append(('DecTree', DecisionTreeClassifier()))
 models.append(('NB', GaussianNB()))
 models.append(('MNB', MultinomialNB()))
 models.append(('RForest', RandomForestClassifier(n_estimators=100)))
@@ -253,13 +253,142 @@ with open("test/minimal_test.txt", "w") as file:
     for name, result in zip(names, results):
         file.write("{},{}\n".format(name, result))
 # plt.show()
-hyper_parameters = {"Ada": {
-    "random_state": seed,
-    "n_estimators ": [50, 100, 150, 200, 250],
-    "algorithm ": ["SAMME", "SAMME.R"],
-    "learning_rate ": [0.5, 0.75, 1.0, 1.5, 2.0]
-}, "GBC": {
-    "n_estimators ": [100, 250, 200, 300, 400]
-}
-
+hyper_parameters = {
+    "Ada": {
+        "n_estimators ": [50, 100, 200, 300, 400, 500],
+        "algorithm ": ["SAMME", "SAMME.R"],
+        "learning_rate ": [0.1, 0.2, 0.3, 0.5, 0.75, 1.0]
+    },
+    'LR': {
+        "solver": ["newton-cg", "lbfgs", "sag", "saga"],
+        "class_weight": ["balanced"],
+        "penalty": ["l1", "l2"],
+        "intercept_scaling ": [0.1, 0.5, 1, 5, 10],
+        "C": [0.5, 0.3, 0.1, 0.2, 1, 0.8, 0.6]
+    },
+    'LDA': {
+        "solver": ["svd", "lsqr", "eigen"],
+        "shrinkage": [None, "auto", 0.1, 0.5, 1],
+        "n_components": [4, 6, 8, 12]
+    },
+    "KNN": {
+        "n_neighbors": [3, 5, 8, 10, 15],
+        "weights": ["uniform", "distance"],
+        "algorithm": ["ball_tree", "kd_tree", "brute", "auto"],
+        "leaf_size": [20, 30, 50, 60],
+        "p": [1, 2, 3, 4, 5],
+        "n_jobs": -1
+    },
+    "DecTree": {
+        "max_depth": [None, 8, 12, 16, 32],
+        "criterion": ["gini", "entropy"],
+        "splitter": ["best", "random"],
+        "max_features": [None, "sqrt", "log2"],
+        "class_weight": ["balanced", None],
+        "min_impurity_decrease": [0, 0.1, 0.2, 0.3]
+    },
+    "NB": {
+        "priors": []
+    },
+    "MNB": {
+        "alpha": [0.01, 0.5, 1, 2, 5],
+        "fit_prior": [True, False]
+    },
+    "RForest": {
+        "n_estimators": [100, 200, 300, 500, 800],
+        "criterion": ["gini", "entropy"],
+        "max_depth": [None, 8, 12, 16, 32],
+        "max_features": [None, "sqrt", "log2"],
+        "min_impurity_decrease": [0, 0.1, 0.2, 0.3],
+        "oob_score": [False, True],
+        "class_weight": ["balanced", None, "balanced_subsample"],
+        "n_jobs": -1
+    },
+    "Kmeans": {
+        "n_clusters": [5, 8, 10, 15, 25],
+        "init": ["kmeans++", "random"],
+        "n_init": [10, 15, 20, 25, 30],
+        "max_iter ": [200, 300, 500, 600],
+        "precompute_distances": ["auto", True, False],
+        "algorithm": ["auto", "full", "elkan"],
+        "n_jobs": -1
+    },
+    "GBC": {
+        "learning_rate ": [0.1, 0.2, 0.3, 0.5, 0.75, 1.0],
+        "loss": ["deviance", "exponential"],
+        "n_estimators ": [100, 200, 300, 400, 500],
+        "subsample": [0.2, 0.7, 1.0, 1.5, 2.0],
+        "criterion": ["friedman_mse", "mse", "mae"],
+        "max_depth": [3, 8, 12, 16, 32],
+        "min_impurity_decrease": [0, 0.1, 0.2, 0.3],
+        "max_features": [None, "sqrt", "log2"],
+    },
+    "SQD": {
+        "loss": ["hinge", "log", "modified_huber", "squared_hinge", "perceptron"],
+        "penalty": ["l1", "l2", "elasticnet"],
+        "alpha": [0.001, 0.1, 0.2, 0.4, 0.5, 0.8],
+        "max_iter": [500, 1000, 1500, 2000, 3000],
+        "learning_rate": ["constant", "optimal", "invscaling", "adaptive"],
+        "eta0": [0.001, 0.1, 0.2, 0.4, 0.5, 0.8],
+        "class_weight": ["balanced", None],
+        "average": [True, 10, 100, 1000],
+        "n_jobs": -1
+    },
+    "XGB": {
+        "eta": [0.1, 0.2, 0.3, 0.5, 0.75, 1.0],
+        "gamma": [0, 0.2, 0.8, 5, 10, 20],
+        "max_depth": [0, 6, 10, 25, 30],
+        "subsample": [0.2, 0.5, 0.75, 1],
+        "tree_method": ["auto", "exact", "approx", "hist"],
+        "updater": ["grow_colmaker,prune", "grow_histmaker,sync", ],
+        "process_type": ["default", "update"],
+        "grow_policy": ["depthwise", "lossguide"],
+        "num_parallel_tree": [1, 3, 5, 10, 15],
+        "max_bin": [256, 512, 1024]
+    },
+    "CatBoost": {
+        "loss_function": ["Logloss", "CrossEntropy", "LogLinQuantile", "Quantile"],
+        'depth': [3, 1, 2, 6, 4, 5, 7, 8, 9, 10],
+        'iterations': [50, 250, 100, 500, 1000],
+        'learning_rate': [0.03, 0.001, 0.01, 0.1, 0.2, 0.3],
+        'l2_leaf_reg': [3, 1, 5, 10, 100],
+        'border_count': [32, 5, 10, 20, 50, 100, 200],
+        'ctr_border_count': [50, 5, 10, 20, 100, 200],
+        "use_best_model": True,
+        "eval_metric": "Accuracy",
+        "thread_count": -1
+    },
+    "BNB":{
+        "alpha": [0.01, 0.5, 1, 2, 5],
+        "fit_prior": [True, False]
+    },
+    "RC": {
+        "alpha": [0.5, 0.1, 0.4, 0.2, 1,],
+        "normalize": [True, False],
+        "max_iter": [50, 250, 100, 500],
+        "class_weight": "balanced",
+        "solver": ["svd", "sparse_cg", "lsqr", "sag"],
+    },
+    "perc": {
+        "penalty": ["l1", "l2", "elasticnet"],
+        "alpha": [0.5, 0.1, 0.4, 0.2, 1],
+        "max_iter": [500, 1000, 1500, 2000, 3000],
+        "tol": 1e-3,
+        "early_stopping": True,
+        "class_weight": ["balanced", None],
+        "n_jobs": -1
+    },
+    "passive": {
+        "C": [0.5, 0.3, 0.1, 0.2, 1, 0.8, 0.6],
+        "max_iter": [500, 1000, 1500, 2000, 3000],
+        "tol": 1e-3,
+        "early_stopping": True,
+        "loss": ["hinge", "squared_hinge"],
+        "class_weight": ["balanced", None],
+        "n_jobs": -1
+    },
+    "QDA": {
+        "tol": 1e-4,
+        "store_covariance": True
+    }
 }
