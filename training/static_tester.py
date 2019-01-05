@@ -170,7 +170,7 @@ models = []
 # from sklearn.preprocessing import MinMaxScaler
 # scaling = MinMaxScaler(feature_range=(-1, 1)).fit(X_train)
 # X_train = scaling.transform(X_train)
-# X_validation = scaling.transform(X_validation)
+# X_validation = scaling.transform(X_validation.toarray())
 
 models.append(('LR', LogisticRegression(solver='lbfgs', class_weight="balanced")))
 models.append(('LDA', LinearDiscriminantAnalysis()))
@@ -181,7 +181,7 @@ models.append(('MNB', MultinomialNB()))
 models.append(('RForest', RandomForestClassifier(n_estimators=100)))
 models.append(('Kmeans', KMeans()))
 models.append(('Ada', AdaBoostClassifier()))
-# models.append(('SVM(linear))', LinearSVC(max_iter=2000)))
+# models.append(('SVM(linear)', LinearSVC(max_iter=2000)))
 # models.append(('SVM', SVC(gamma="scale")))
 models.append(('GBC', GradientBoostingClassifier()))
 models.append(('SQD', SGDClassifier()))
@@ -390,5 +390,14 @@ hyper_parameters = {
     "QDA": {
         "tol": 1e-4,
         "store_covariance": True
+    },
+    "SVM(linear)": {
+        "penalty": ["l1","l2"],
+        "loss": ["hinge","squared_hinge"],
+        "dual": [False, True],
+        "C": [0.5, 0.2, 1, 0.8, 0.6,2 ,3,5 ],
+        "intercept_scaling": [1,2,3,5,10],
+        "random_state": seed,
+        "max_iter": [1000,2000,3000,4000]
     }
 }
