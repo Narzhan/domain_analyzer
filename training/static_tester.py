@@ -258,14 +258,16 @@ hyper_parameters = {
     "Ada": {
         "n_estimators ": [50, 100, 200, 300, 400, 500],
         "algorithm ": ["SAMME", "SAMME.R"],
-        "learning_rate ": [0.1, 0.2, 0.3, 0.5, 0.75, 1.0]
+        "learning_rate ": [0.2, 0.3, 0.5, 0.75, 1.0, 2, 5]
     },
     'LR': {
         "solver": ["newton-cg", "lbfgs", "sag", "saga"],
         "class_weight": ["balanced"],
         "penalty": ["l1", "l2"],
         "intercept_scaling ": [0.1, 0.5, 1, 5, 10],
-        "C": [0.5, 0.3, 0.1, 0.2, 1, 0.8, 0.6]
+        "C": [0.5, 0.3, 0.1, 1, 0.8, 0.6, 3, 5, 10],
+        "max_iter": [100, 200, 300, 400, 500],
+        "n_jobs": -1
     },
     'LDA': {
         "solver": ["svd", "lsqr", "eigen"],
@@ -276,7 +278,7 @@ hyper_parameters = {
         "n_neighbors": [3, 5, 8, 10, 15],
         "weights": ["uniform", "distance"],
         "algorithm": ["ball_tree", "kd_tree", "brute", "auto"],
-        "leaf_size": [20, 30, 50, 60],
+        "leaf_size": [5, 10, 20, 30, 50, 60],
         "p": [1, 2, 3, 4, 5],
         "n_jobs": -1
     },
@@ -288,9 +290,6 @@ hyper_parameters = {
         "class_weight": ["balanced", None],
         "min_impurity_decrease": [0, 0.1, 0.2, 0.3]
     },
-    "NB": {
-        "priors": []
-    },
     "MNB": {
         "alpha": [0.01, 0.5, 1, 2, 5],
         "fit_prior": [True, False]
@@ -300,7 +299,7 @@ hyper_parameters = {
         "criterion": ["gini", "entropy"],
         "max_depth": [None, 8, 12, 16, 32],
         "max_features": [None, "sqrt", "log2"],
-        "min_impurity_decrease": [0, 0.1, 0.2, 0.3],
+        "min_impurity_decrease": [0.1, 0.2, 0.3, 0.5],
         "oob_score": [False, True],
         "class_weight": ["balanced", None, "balanced_subsample"],
         "n_jobs": -1
@@ -359,12 +358,12 @@ hyper_parameters = {
         "eval_metric": "Accuracy",
         "thread_count": -1
     },
-    "BNB":{
+    "BNB": {
         "alpha": [0.01, 0.5, 1, 2, 5],
         "fit_prior": [True, False]
     },
     "RC": {
-        "alpha": [0.5, 0.1, 0.4, 0.2, 1,],
+        "alpha": [0.5, 0.1, 0.4, 0.2, 1, ],
         "normalize": [True, False],
         "max_iter": [50, 250, 100, 500],
         "class_weight": "balanced",
@@ -393,12 +392,12 @@ hyper_parameters = {
         "store_covariance": True
     },
     "SVM(linear)": {
-        "penalty": ["l1","l2"],
-        "loss": ["hinge","squared_hinge"],
+        "penalty": ["l1", "l2"],
+        "loss": ["hinge", "squared_hinge"],
         "dual": [False, True],
-        "C": [0.5, 0.2, 1, 0.8, 0.6,2 ,3,5 ],
-        "intercept_scaling": [1,2,3,5,10],
+        "C": [0.5, 0.2, 1, 0.8, 0.6, 2, 3, 5],
+        "intercept_scaling": [1, 2, 3, 5, 10],
         "random_state": seed,
-        "max_iter": [1000,2000,3000,4000]
+        "max_iter": [1000, 2000, 3000, 4000]
     }
 }
