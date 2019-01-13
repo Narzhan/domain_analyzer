@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 from scipy import stats
 import matplotlib.mlab as mlab
-import csv, ast
+import csv, ast, operator
 from statistics import mean, stdev
 
 dataset = pandas.read_csv("test_data.csv")
@@ -135,13 +135,30 @@ def skewness():
     plt.show()
 
 
-# # outliers_box_plot()
-# skewness()
-import csv
+def langugae_distribution():
+    lang_count = {'ms': 1275, 'sv': 6116, 'sk': 3869, 'ka': 353, 'mk': 402, 'lt': 1205, 'nb': 1, 'la': 257, 'nn': 96,
+                  'is': 415, 'so': 77, 'cs': 59516, 'bs': 33, 'pt': 50177, 'bn': 1241, 'si': 135, 'tr': 17630,
+                  'en': 1503042, 'gu': 99, 'sl': 1406, 'nl': 14570, 'bi': 1, 'sw': 94, 'co': 2, 'hy': 263, 'ro': 6797,
+                  'or': 6, 'ja': 68944, 'he': 1537, 'mn': 1, 'te': 287, 'vi': 9739, 'cy': 156, 'zh_chs': 57404,
+                  'sr': 2464, 'ts': 1, 'jv': 9, 'sq': 578, 'ia': 6, 'id': 12368, 'el': 7193, 'pa': 24, 'dv': 4,
+                  'fi': 4264, 'mg': 2, 'lo': 25, 'km': 185, 'mt': 13, 'af': 98, 'ga': 22, 'kk': 3, 'az': 61, 'lb': 2,
+                  'uk': 3157, 'ml': 290, 'pl': 21060, 'ur': 256, 'tl': 247, 'su': 2, 'eo': 34, 'ta': 693, 'da': 4223,
+                  'ht': 4, 'fa': 21154, 'my': 318, 'aa': 22, 'ru': 88082, 'ca': 1633, 'uz': 362, 'ps': 44, 'be': 57,
+                  'no': 3733, 'fy': 1, 'es': 80195, 'zh_cht': 14120, 'hu': 4727, 'hr': 2037, 'it': 39938, 'ii': 1,
+                  'fr': 76044, 'th': 6991, 'an': 1, 'ar': 12523, 'sn': 1, 'eu': 199, 'kn': 111, 'ko': 17812, 'et': 587,
+                  'gl': 215, 'bg': 2533, 'de': 69192, 'ky': 2, 'fo': 3, 'ku': 145, 'hi': 2470, 'lv': 555}
+    print(sum(lang_count.values()), len(lang_count))
+    lang_count = sorted(lang_count.items(), key=operator.itemgetter(1))
+    lang_count = lang_count[len(lang_count)-20:]
+    print(lang_count)
+    # langs= []
+    # counts=[]
+    # for langugae in lang_count:
+    #     langs.append(langugae[0])
+    #     counts.append(langugae[1])
+    # sns.set(style="whitegrid")
+    # ax=sns.barplot(x=langs, y=counts)
+    # plt.show()
 
-# with open("text_test_data.csv", "r", errors="ignore") as file:
-#     with open("text_test_data_english.csv", "w", errors="ignore") as output:
-#         reader = csv.reader(file, delimiter=";")
-#         output.write("{}\n".format(";".join(next(reader))))
-#         for row in reader:
-#             output.write("{}\n".format(";".join(row)))
+
+langugae_distribution()
