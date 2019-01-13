@@ -71,13 +71,13 @@ if not os.path.exists("binaries/x(0.3).npy") and not os.path.exists("binaries/y(
         lda_model, bow_corpus = None, None
         pickle.dump(tfidf, open("tfidf.pkl", "wb"))
     else:
-        test_dataset = pandas.read_csv("text_test_data.csv", index_col=2, encoding='utf-8', delimiter=";",
-                                       engine="python")
-        test_dataset = test_dataset.replace(np.nan, '', regex=True)
-        test_dataset = test_dataset.sort_index()
-        tfidf = pickle.load(open("binaries/tfidf(0.1).pkl", "rb"))
-        features = tfidf.transform(test_dataset.text)
-        # features = pickle.load(open("gensim_fasttext/cluster_labels_tfidf.pkl", "rb")).reshape((-1,1))
+        # test_dataset = pandas.read_csv("text_test_data.csv", index_col=2, encoding='utf-8', delimiter=";",
+        #                                engine="python")
+        # test_dataset = test_dataset.replace(np.nan, '', regex=True)
+        # test_dataset = test_dataset.sort_index()
+        # tfidf = pickle.load(open("binaries/tfidf(0.1).pkl", "rb"))
+        # features = tfidf.transform(test_dataset.text)
+        features = pickle.load(open("gensim_fasttext/cluster_labels_tfidf.pkl", "rb")).reshape((-1,1))
         test_dataset, tfidf = None, None
         topics = pickle.load(open("gensim_lda/topics_20.pkl", "rb"))
         # w2v_labels = pickle.load(open("w2v_feature_array.pkl", "rb"))
@@ -86,10 +86,10 @@ if not os.path.exists("binaries/x(0.3).npy") and not os.path.exists("binaries/y(
     array = dataset.values
     X = array[:, 0:10]
     Y = array[:, 10]
-    X = sparse.hstack([features, topics, w2v_labels, X])
-    # X = np.concatenate((features, topics, w2v_labels, X), axis=1)
+    # X = sparse.hstack([features, topics, w2v_labels, X])
+    X = np.concatenate((features, topics, w2v_labels, X), axis=1)
     # X = sparse.hstack([features, X])
-    features, topics, array = None, None, None
+    # features, topics, array = None, None, None
     np.save("x.npy", X)
     np.save("y.npy", Y)
 else:
@@ -102,7 +102,7 @@ X_train, X_validation, Y_train, Y_validation, indices_train, indices_test = mode
                                                                                                              test_size=validation_size,
                                                                                                              random_state=seed)
 X, Y, = None, None
-X_train = X_train.toarray()
+# X_train = X_train.toarray()
 scoring = 'accuracy'
 
 print("Variances: {}".format(dataset.var()))
@@ -169,21 +169,21 @@ print("Correlations: {}".format(dataset.corr()))
 # print("ICA: {}".format(x_reduced.shape))
 
 models = []
-# from sklearn.preprocessing import MinMaxScaler
-# scaling = MinMaxScaler(feature_range=(-1, 1)).fit(X_train)
-# X_train = scaling.transform(X_train)
-# X_validation = scaling.transform(X_validation.toarray())
+from sklearn.preprocessing import MinMaxScaler
+scaling = MinMaxScaler(feature_range=(0, 1)).fit(X_train)
+X_train = scaling.transform(X_train)
+X_validation = scaling.transform(X_validation)
 
 models.append(('LR', LogisticRegression(solver='lbfgs', class_weight="balanced")))
 models.append(('LDA', LinearDiscriminantAnalysis()))
-models.append(('KNN', KNeighborsClassifier()))
+# models.append(('KNN', KNeighborsClassifier()))
 models.append(('DecTree', DecisionTreeClassifier()))
 models.append(('NB', GaussianNB()))
 models.append(('MNB', MultinomialNB()))
 models.append(('RForest', RandomForestClassifier(n_estimators=100)))
 models.append(('Kmeans', KMeans()))
 models.append(('Ada', AdaBoostClassifier()))
-# models.append(('SVM(linear)', LinearSVC(max_iter=2000)))
+models.append(('SVM(linear)', LinearSVC(max_iter=2000)))
 # models.append(('SVC', SVC(gamma="scale", cache_size=1000)))
 # models.append(('NuSVC', NuSVC(gamma="scale", cache_size=1000)))
 models.append(('GBC', GradientBoostingClassifier()))
@@ -236,7 +236,7 @@ print("Took: {}".format(time.time() - start_time))
 
 knn = KNeighborsClassifier()
 knn.fit(X_train, Y_train)
-predictions = knn.predict(X_validation.toarray())
+predictions = knn.predict(X_validation)
 print(accuracy_score(Y_validation, predictions))
 print(confusion_matrix(Y_validation, predictions))
 print(classification_report(Y_validation, predictions))
