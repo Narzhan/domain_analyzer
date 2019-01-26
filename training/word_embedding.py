@@ -1,29 +1,13 @@
 import pandas, nltk
 import numpy as np
+import string
 from gensim.models import word2vec
 from gensim.models import FastText
 import gensim, pickle
+from keras import Input, Model
+from keras.layers import Embedding, SpatialDropout1D, LSTM, Dense, Dropout, GRU, Bidirectional
 from keras.preprocessing.text import Tokenizer
 from nltk import SnowballStemmer, WordNetLemmatizer
-
-# dataset = pandas.read_csv("text_test_data.csv", index_col=2, encoding='utf-8', delimiter=";", engine="python")
-# dataset = dataset.replace(np.nan, '', regex=True)
-# dataset = dataset.sort_index()
-# stemmer = SnowballStemmer('english')
-#
-# def lemmatize_stemming(text):
-#     return stemmer.stem(WordNetLemmatizer().lemmatize(text, pos='v'))
-#
-#
-# def preprocess(text):
-#     result = []
-#     for token in gensim.utils.simple_preprocess(text):
-#         if token not in gensim.parsing.preprocessing.STOPWORDS and len(token) > 3:
-#             result.append(lemmatize_stemming(token))
-#     return result
-#
-# # processed_docs = pickle.load(open("gensim_lda/processed_docs.pkl", "rb"))
-# processed_docs = dataset['text'].map(preprocess)
 #
 #
 # feature_size = 100  # Word vector dimensionality
@@ -86,47 +70,150 @@ from nltk import SnowballStemmer, WordNetLemmatizer
 # print(pandas.concat([dataset, cluster_labels], axis=1))
 
 from numpy import asarray
+from sklearn.metrics import confusion_matrix
 
-docs = ['Well done!',
-        'Good work',
-        'Great effort',
-        'nice work',
-        'Excellent!',
-        'Weak',
-        'Poor effort!',
-        'not good',
-        'poor work',
-        'Could have done better.']
-# embeddings_index = {}
-# f = open('glove.6B.100d.txt')
-# for line in f:
-#     values = line.split()
-#     word = values[0]
-#     coefs = asarray(values[1:], dtype='float32')
-#     embeddings_index[word] = coefs
-# f.close()
-# t = Tokenizer()
-# t.fit_on_texts(docs)
-# vocab_size = len(t.word_index) + 1
-# embedding_matrix = np.zeros((vocab_size, 300))
-# print(t.word_index)
-# for word, i in t.word_index.items():
-#     embedding_vector = embeddings_index.get(word)
-#     if embedding_vector is not None:
-#         embedding_matrix[i] = embedding_vector
+dataset = pandas.read_csv("text_test_data.csv", index_col=2, encoding='utf-8', delimiter=";", engine="python")
+dataset = dataset.replace(np.nan, '', regex=True)
+dataset = dataset.sort_index()
+languages = ["en", "cs", "de", "es", "fr", "ja", "ru", "zh"]
+# pretrained_dataset = dataset.loc[dataset["language"].isin(languages)]
+customtrain_dataset = dataset.loc[~dataset["language"].isin(languages)]
 
-######################################
+
+def preprocess(text):
+    # convert to list the input
+    result = []
+    for line in text:
+        tokens = [key.lower() for key in nltk.word_tokenize(line)]
+        table = str.maketrans("", "", string.punctuation)
+        stripped = [key.translate(table) for key in tokens]
+        words = [word for word in stripped if word.isalpha()]
+        result.append(words)
+    return result
+
+
+processed_docs = customtrain_dataset['text'].map(preprocess)
+feature_size = 300
+window_context = 10
+min_word_count = 5
+sample = 1e-3
+
+fast_text = FastText(processed_docs, size=feature_size,
+                     window=window_context, min_count=min_word_count, sample=sample,
+                     iter=50)
+fast_text.save("splitted_text/word_embedding/fast_text/fast_text.pkl")
+fast_text.wv.save_word2vec_format("pretrained/custom_embedding.txt", binary=False)
+
+
 t = Tokenizer()
-t.fit_on_texts(docs)
+t.fit_on_texts(dataset.text)
 vocab_size = len(t.word_index) + 1
 embedding_matrix = np.zeros((vocab_size, 300))
-with open("", "r") as file:
+files_location = ["wiki.cs.vec", "wiki.de.vec", "wiki.en.vec", "wiki.es.vec", "wiki.fr.vec", "wiki.ja.vec",
+                  "wiki.ru.vec", "wiki.zh.vec"]
+for file_location in files_location:
+    with open("pretrained/{}".format(files_location), "r") as file:
+        for line in file:
+            values = line.split()
+            if values[0] in t.word_index:
+                word = values[0]
+                coefs = asarray(values[len(values)-300:], dtype='float32')
+                embedding_matrix[t.word_index[word]] = coefs
+
+with open("pretrained/custom_embedding.txt", "r") as file:
     for line in file:
         values = line.split()
         if values[0] in t.word_index:
             word = values[0]
-            coefs = asarray(values[len(values)-300:], dtype='float32')
+            coefs = asarray(values[len(values) - 300:], dtype='float32')
             embedding_matrix[t.word_index[word]] = coefs
+np.save("splitted_text/word_embedding/fast_text/embedding_martix.npy", embedding_matrix)
 
 
-# switch process, first load text data than load embedding and filter it accordingly to the present text documents
+
+def create_rnn_lstm(X_train, y_train):
+    # Add an Input Layer
+    input_layer = Input((70,))
+
+    # Add the word embedding Layer
+    embedding_layer = Embedding(vocab_size, 300, weights=[embedding_matrix], trainable=False)(
+        input_layer)
+    embedding_layer = SpatialDropout1D(0.3)(embedding_layer)
+
+    # Add the LSTM Layer
+    lstm_layer = LSTM(100)(embedding_layer)
+
+    # Add the output Layers
+    output_layer1 = Dense(50, activation="relu")(lstm_layer)
+    output_layer1 = Dropout(0.25)(output_layer1)
+    output_layer2 = Dense(1, activation="sigmoid")(output_layer1)
+
+    # Compile the model
+    model = Model(inputs=input_layer, outputs=output_layer2)
+    model.compile(optimizer="adam", loss='binary_crossentropy', metrics=['accuracy'])
+
+    # Fitting our model
+    model.fit(X_train, y_train, batch_size=100, nb_epoch=10)
+    evaluate_model(model)
+
+
+def create_rnn_gru(X_train, y_train):
+    # Add an Input Layer
+    input_layer = Input((70,))
+
+    # Add the word embedding Layer
+    embedding_layer = Embedding(vocab_size, 300, weights=[embedding_matrix], trainable=False)(
+        input_layer)
+    embedding_layer = SpatialDropout1D(0.3)(embedding_layer)
+
+    # Add the GRU Layer
+    lstm_layer = GRU(100)(embedding_layer)
+
+    # Add the output Layers
+    output_layer1 = Dense(50, activation="relu")(lstm_layer)
+    output_layer1 = Dropout(0.25)(output_layer1)
+    output_layer2 = Dense(1, activation="sigmoid")(output_layer1)
+
+    # Compile the model
+    model = Model(inputs=input_layer, outputs=output_layer2)
+    model.compile(optimizer="adam", loss='binary_crossentropy', metrics=['accuracy'])
+
+    # Fitting our model
+    model.fit(X_train, y_train, batch_size=100, epochs=10)
+    evaluate_model(model)
+
+
+def create_bidirectional_rnn(X_train, y_train):
+    # Add an Input Layer
+    input_layer = Input((70,))
+
+    # Add the word embedding Layer
+    embedding_layer = Embedding(vocab_size, 300, weights=[embedding_matrix], trainable=False)(
+        input_layer)
+    embedding_layer = SpatialDropout1D(0.3)(embedding_layer)
+
+    # Add the LSTM Layer
+    lstm_layer = Bidirectional(GRU(100))(embedding_layer)
+
+    # Add the output Layers
+    output_layer1 = Dense(50, activation="relu")(lstm_layer)
+    output_layer1 = Dropout(0.25)(output_layer1)
+    output_layer2 = Dense(1, activation="sigmoid")(output_layer1)
+
+    # Compile the model
+    model = Model(inputs=input_layer, outputs=output_layer2)
+    model.compile(optimizer="adam", loss='binary_crossentropy', metrics=['accuracy'])
+
+    # Fitting our model
+    model.fit(X_train, y_train, batch_size=100, nb_epoch=10)
+    evaluate_model(model)
+
+
+def evaluate_model(classifier):
+    y_pred = classifier.predict(X_test)
+    y_pred = (y_pred > 0.5)
+    cm = confusion_matrix(y_test, y_pred)
+    print(cm)
+    diagonal_sum = cm.trace()
+    sum_of_all_elements = cm.sum()
+    print(diagonal_sum / sum_of_all_elements)
