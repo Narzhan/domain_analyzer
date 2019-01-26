@@ -129,9 +129,9 @@ with open("pretrained/custom_embedding.txt", "r") as file:
             embedding_matrix[t.word_index[word]] = coefs
 np.save("splitted_text/word_embedding/fast_text/embedding_martix.npy", embedding_matrix)
 
+X_train, y_train, X_validation, y_validation= None, None, None,None
 
-
-def create_rnn_lstm(X_train, y_train):
+def create_rnn_lstm():
     # Add an Input Layer
     input_layer = Input((70,))
 
@@ -157,7 +157,7 @@ def create_rnn_lstm(X_train, y_train):
     evaluate_model(model)
 
 
-def create_rnn_gru(X_train, y_train):
+def create_rnn_gru():
     # Add an Input Layer
     input_layer = Input((70,))
 
@@ -210,9 +210,9 @@ def create_bidirectional_rnn(X_train, y_train):
 
 
 def evaluate_model(classifier):
-    y_pred = classifier.predict(X_test)
+    y_pred = classifier.predict(X_validation)
     y_pred = (y_pred > 0.5)
-    cm = confusion_matrix(y_test, y_pred)
+    cm = confusion_matrix(y_validation, y_pred)
     print(cm)
     diagonal_sum = cm.trace()
     sum_of_all_elements = cm.sum()
