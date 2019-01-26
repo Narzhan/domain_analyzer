@@ -159,6 +159,36 @@ def langugae_distribution():
     # sns.set(style="whitegrid")
     # ax=sns.barplot(x=langs, y=counts)
     # plt.show()
+from statistics import median
+
+def plot_coherence():
+    coherence_values = [-4.797301092927819, -3.963008547611659, -4.972567367283015, -5.351131376341533,
+                        -4.338216212541027,
+                        -5.210745925560019, -5.2297786159645225, -4.392520352889975, -5.458278450687757,
+                        -4.697975245506327,
+                        -5.480077815398153,
+                        -4.822231370498071, -4.97530794907234, -5.483165586827279, -5.43950102560758,
+                        -4.967268508371155,
+                        -5.097836345708665, -5.902612497151679, -4.812677343844594, -5.715736750889206,
+                        -5.272727025095471,
+                        -5.636415965103936, -5.3676849859041, -5.977049925519246, -5.809777787445271,
+                        -6.527556205148542, -6.469163867568904, -6.571937542866436, -6.607958664797175,
+                        -6.771573127877327, -7.183241000622612, -7.517588205113764, -9.453467792944165]
+    # coherence_values = coherence_values[:-8]
+    number_of_topics = [40, 50, 60, 70, 80, 90, 100, 150]
+    previous = [i for i in range(5,30)]
+    previous.extend(number_of_topics)
+    fig, ax = plt.subplots()
+    ax.plot(previous, coherence_values, marker='o', color='b')
+    # ax.xaxis.set_ticks(previous)
+    # sum(coherence_values) / len(coherence_values)
+    # plt.axhline(y=median(coherence_values))
+    ax.set(xlabel='number of topics', ylabel='coherence',
+           title='The change of coherence with the number of topics')
+    ax.grid()
+    plt.gca().invert_yaxis()
+    # fig.savefig("test.png")
+    plt.show()
 
 
-langugae_distribution()
+plot_coherence()
