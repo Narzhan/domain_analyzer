@@ -60,7 +60,7 @@ del dataset["ranking_response"]
 
 if not os.path.exists("binaries/x(0.3).npy") and not os.path.exists("binaries/y(0.3).npy"):
     if not os.path.exists("binaries/tfidf(0.1).pkl"):
-        test_dataset = pandas.read_csv("text_test_data.csv", index_col=2, encoding='utf-8', delimiter=";", engine="python")
+        test_dataset = pandas.read_csv("text_test_data.csv", index_col=3, encoding='utf-8', delimiter=";", engine="python")
         test_dataset = test_dataset.replace(np.nan, '', regex=True)
         test_dataset = test_dataset.sort_index()
         tfidf = TfidfVectorizer(min_df=0.2, analyzer='word', stop_words="english", ngram_range=(1, 2))
