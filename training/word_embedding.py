@@ -72,12 +72,14 @@ from nltk import SnowballStemmer, WordNetLemmatizer
 from numpy import asarray
 from sklearn.metrics import confusion_matrix
 
-dataset = pandas.read_csv("text_test_data.csv", index_col=2, encoding='utf-8', delimiter=";", engine="python")
+dataset = pandas.read_csv("text_test_data_splitted.csv", index_col=3, encoding='utf-8', delimiter=";", engine="python")
 dataset = dataset.replace(np.nan, '', regex=True)
 dataset = dataset.sort_index()
 languages = ["en", "cs", "de", "es", "fr", "ja", "ru", "zh"]
+filter_languages = ["en", "de", "es", "fr", "ja", "ru", "zh"]
 # pretrained_dataset = dataset.loc[dataset["language"].isin(languages)]
 customtrain_dataset = dataset.loc[~dataset["language"].isin(languages)]
+dataset = dataset.loc[~dataset["language"].isin(filter_languages)]
 
 
 def preprocess(text):
@@ -109,8 +111,9 @@ t = Tokenizer()
 t.fit_on_texts(dataset.text)
 vocab_size = len(t.word_index) + 1
 embedding_matrix = np.zeros((vocab_size, 300))
-files_location = ["wiki.cs.vec", "wiki.de.vec", "wiki.en.vec", "wiki.es.vec", "wiki.fr.vec", "wiki.ja.vec",
-                  "wiki.ru.vec", "wiki.zh.vec"]
+# files_location = ["wiki.cs.vec", "wiki.de.vec", "wiki.en.vec", "wiki.es.vec", "wiki.fr.vec", "wiki.ja.vec",
+#                   "wiki.ru.vec", "wiki.zh.vec"]
+files_location = ["wiki.cs.vec"]
 for file_location in files_location:
     with open("pretrained/{}".format(files_location), "r") as file:
         for line in file:
@@ -211,9 +214,20 @@ def create_bidirectional_rnn(X_train, y_train):
 
 def evaluate_model(classifier):
     y_pred = classifier.predict(X_validation)
+
     y_pred = (y_pred > 0.5)
     cm = confusion_matrix(y_validation, y_pred)
     print(cm)
     diagonal_sum = cm.trace()
     sum_of_all_elements = cm.sum()
     print(diagonal_sum / sum_of_all_elements)
+
+# #Glove model
+# model_glove = Sequential()
+# model_glove.add(Embedding(vocabulary_size, 100, input_length=50, weights=[embedding_matrix], trainable=False))
+# model_glove.add(Dropout(0.2))
+# model_glove.add(Conv1D(64, 5, activation='relu'))
+# model_glove.add(MaxPooling1D(pool_size=4))
+# model_glove.add(LSTM(100))
+# model_glove.add(Dense(1, activation='sigmoid'))
+# model_glove.compile(loss='binary_crossentropy', optimizer='adam', metrics=['accuracy'])
