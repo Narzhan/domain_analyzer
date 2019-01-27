@@ -72,16 +72,17 @@ def models():
         else:
             print(msg)
 
-
-dataset = load_data("splitted_text/tf_idf/features_5.pkl")
-dataset.to_csv("splitted_text/tf_idf/dataframe5.csv")
-array = dataset.values
-X = array[:, 0:-1]
-Y = array[:, -1]
-validation_size = 0.20
-seed = 7
-X_train, X_validation, Y_train, Y_validation, names_train, names_validation = model_selection.train_test_split(X, Y,
-                                                                                                               dataset.index,
-                                                                                                               test_size=validation_size,
-                                                                                                               random_state=seed)
-models()
+for i in range(1,5):
+    print("Going over {}% min df".format(i))
+    dataset = load_data("splitted_text/tf_idf/features_{}.pkl".format(i))
+    dataset.to_csv("splitted_text/tf_idf/dataframe{}.csv".format(i))
+    array = dataset.values
+    X = array[:, 0:-1]
+    Y = array[:, -1]
+    validation_size = 0.20
+    seed = 7
+    X_train, X_validation, Y_train, Y_validation, names_train, names_validation = model_selection.train_test_split(X, Y,
+                                                                                                                   dataset.index,
+                                                                                                                   test_size=validation_size,
+                                                                                                                   random_state=seed)
+    models()
