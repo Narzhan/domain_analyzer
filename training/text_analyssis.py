@@ -69,7 +69,7 @@ def top_feats_by_class(Xtr, y, features, min_tfidf=0.1, top_n=30):
     return dfs
 
 
-def plot_tfidf_classfeats_h(dfs, i):
+def plot_tfidf_classfeats_h(dfs, min_df):
     ''' Plot the data frames returned by the function plot_tfidf_classfeats(). '''
     fig = plt.figure(figsize=(12, 9), facecolor="w")
     x = np.arange(len(dfs[0]))
@@ -81,7 +81,7 @@ def plot_tfidf_classfeats_h(dfs, i):
         ax.set_frame_on(False)
         ax.get_xaxis().tick_bottom()
         ax.get_yaxis().tick_left()
-        ax.set_xlabel("Průměrné Tf-Idf Skore pro {}% minimum".format(i), labelpad=16, fontsize=14)
+        ax.set_xlabel("Průměrné Tf-Idf Skore pro {}% minimum".format(min_df), labelpad=16, fontsize=14)
         ax.set_title(transaltion[str(df.label)], fontsize=16)
         ax.ticklabel_format(axis='x', style='sci', scilimits=(-2, 2))
         ax.barh(x, df.tfidf, align='center', color='#3F5D7D')
@@ -89,7 +89,7 @@ def plot_tfidf_classfeats_h(dfs, i):
         ax.set_ylim([-1, x[-1] + 1])
         yticks = ax.set_yticklabels(df.feature)
         plt.subplots_adjust(bottom=0.09, right=0.97, left=0.15, top=0.95, wspace=0.52)
-    plt.savefig("tfidf_{}.png".format(i))
+    plt.savefig("tfidf_{}.png".format(min_df))
     # plt.show()
 
 
