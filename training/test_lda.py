@@ -15,7 +15,7 @@ import numpy as np
 import gensim
 # nltk.download('wordnet')
 
-# dataset = pandas.read_csv("text_test_data.csv", index_col=2, encoding='utf-8', delimiter=";", engine="python")
+dataset = pandas.read_csv("text_test_data.csv", index_col=2, encoding='utf-8', delimiter=";", engine="python")
 # dataset = dataset.replace(np.nan, '', regex=True)
 # dataset = dataset.sort_index()
 
@@ -34,32 +34,41 @@ def preprocess(text):
     return result
 
 
-# processed_docs = dataset['text'].map(preprocess)
+processed_docs = dataset['text'].map(preprocess)
 
 # pickle.dump(processed_docs, open("processed_docs.pkl", "wb"))
 # processed_docs = pickle.load(open("gensim_lda/processed_docs.pkl", "rb"))
 
-# dictionary = gensim.corpora.Dictionary(processed_docs)
+dictionary = gensim.corpora.Dictionary(processed_docs)
+dictionary.save("dictionary.dict")
 
 # dictionary = pickle.load(open("gensim_lda/old/dictionary.pkl", "rb"))
 
 # dictionary.filter_extremes(no_below=0.10, no_above=0.8, keep_n=100000)
 # pickle.dump(dictionary, open("dictionary.pkl", "wb"))
-# bow_corpus = [dictionary.doc2bow(doc) for doc in processed_docs]
+bow_corpus = [dictionary.doc2bow(doc) for doc in processed_docs]
 # pickle.dump(bow_corpus, open("bow_corpus.pkl", "wb"))
 # processed_docs = None
-bow_corpus = pickle.load(open("gensim_lda/old/bow_corpus.pkl", "rb"))
+bow_corpus = pickle.load(open("gensim_lda/bow_corpus.pkl", "rb"))
 
 # import pyLDAvis.gensim
-#
-lda_model = gensim.models.LdaMulticore.load("gensim_lda/old/lda_model.pkl")
-topics = np.array([[doc_topics[0][0]] for doc_topics in lda_model.get_document_topics(bow_corpus)])
-pickle.dump(topics, open("gensim_lda/old/topics.pkl", "wb"))
+
+lda_model = gensim.models.LdaMulticore.load("gensim_lda/lda_model_20.pkl")
+lsi_model = gensim.models.LsiModel(bow_corpus, num_topics=40, id2word=dictionary)
+topics = lsi_model[bow_corpus]
+# topics = np.array([[doc_topics[0][0]] for doc_topics in lda_model.get_document_topics(bow_corpus)]) # can't be used because the distribution is not sorted
+topics = np.array([[max(doc_topics, key=lambda value: value[1])[0] if len(doc_topics) > 0 else 420] for doc_topics in
+                   lda_model.get_document_topics(bow_corpus)])
+print(topics)
+
+# pickle.dump(topics, open("gensim_lda/old/topics.pkl", "wb"))
+# lsi_model = gensim.models.LsiModel(bow_corpus, num_topics=5, id2word=dictionary, )
 # visualisation = pyLDAvis.gensim.prepare(lda_model, bow_corpus, dictionary)
 # pyLDAvis.save_html(visualisation, 'LDA_Visualization.html')
 
 # processed_docs = None
 # tfidf = models.TfidfModel(bow_corpus)
+
 # corpus_tfidf = tfidf[bow_corpus]
 
 # coherence_values = []
