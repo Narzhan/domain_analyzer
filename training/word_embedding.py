@@ -12,8 +12,8 @@ from numpy import asarray
 from sklearn.metrics import confusion_matrix
 from sklearn.model_selection import train_test_split
 from keras.preprocessing.sequence import pad_sequences
-
-
+from nltk.stem import WordNetLemmatizer, SnowballStemmer
+nltk.download('wordnet')
 # feature_size = 100  # Word vector dimensionality
 # window_context = 20  # Context window size
 # min_word_count = 10  # Minimum word count
@@ -89,6 +89,20 @@ def preprocess(text):
     words = [word for word in tokens if word.isalpha()]
     return words
 
+
+# stemmer = SnowballStemmer('english')
+#
+#
+# def lemmatize_stemming(text):
+#     return stemmer.stem(WordNetLemmatizer().lemmatize(text, pos='v'))
+#
+#
+# def preprocess(text):
+#     result = []
+#     for token in gensim.utils.simple_preprocess(text):
+#         if token not in gensim.parsing.preprocessing.STOPWORDS and len(token) > 3:
+#             result.append(lemmatize_stemming(token))
+#     return result
 
 # seq_lengths = dataset.text.apply(lambda x: len(x.split(' ')))
 # print(seq_lengths.describe())
