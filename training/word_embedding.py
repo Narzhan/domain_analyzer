@@ -12,9 +12,8 @@ from numpy import asarray
 from sklearn.metrics import confusion_matrix
 from sklearn.model_selection import train_test_split
 from keras.preprocessing.sequence import pad_sequences
-from nltk import SnowballStemmer, WordNetLemmatizer
-#
-#
+
+
 # feature_size = 100  # Word vector dimensionality
 # window_context = 20  # Context window size
 # min_word_count = 10  # Minimum word count
@@ -127,6 +126,7 @@ files_location = ["wiki.cs.vec", "wiki.de.vec", "wiki.en.vec", "wiki.es.vec", "w
 # files_location = ["wiki.cs.vec"]
 for file_location in files_location:
     with open("pretrained/{}".format(file_location), "r") as file:
+        next(file)
         for line in file:
             values = line.split()
             if values[0] in t.word_index:
