@@ -47,6 +47,14 @@ from sklearn.ensemble import BaggingClassifier
 # dataset = pandas.read_csv("result.csv")
 dataset = pandas.read_csv("test_data.csv", index_col=12)
 dataset = dataset.sort_index()
+dataset_lda = pandas.read_csv("splitted_text/lda/result_data.csv", index_col=0)
+dataset = dataset.join(dataset_lda)
+dataset_tfidf = pandas.read_csv("splitted_text/tf_idf/result_data.csv", index_col=0)
+dataset = dataset.join(dataset_tfidf)
+col_list = list(dataset)
+col_list.insert(len(col_list), col_list.pop(col_list.index('label')))
+dataset = dataset.ix[:, col_list]
+
 print(dataset.shape)
 print(round(dataset.describe(), 2))
 print(dataset.groupby("label").size())
@@ -59,35 +67,34 @@ del dataset["ranking_response"]
 # plt.show()
 
 if not os.path.exists("binaries/x(0.3).npy") and not os.path.exists("binaries/y(0.3).npy"):
-    if not os.path.exists("binaries/tfidf(0.1).pkl"):
-        test_dataset = pandas.read_csv("text_test_data.csv", index_col=3, encoding='utf-8', delimiter=";", engine="python")
-        test_dataset = test_dataset.replace(np.nan, '', regex=True)
-        test_dataset = test_dataset.sort_index()
-        tfidf = TfidfVectorizer(min_df=0.2, analyzer='word', stop_words="english", ngram_range=(1, 2))
-        features = tfidf.fit_transform(test_dataset.text)
-        lda_model = gensim.models.LdaMulticore.load("gensim_lda/lda_model_20.pkl")
-        bow_corpus = pickle.load(open("gensim_lda/bow_corpus.pkl", "rb"))
-        topics = np.array([[doc_topics[0][0]] for doc_topics in lda_model.get_document_topics(bow_corpus)])
-        lda_model, bow_corpus = None, None
-        pickle.dump(tfidf, open("tfidf.pkl", "wb"))
-    else:
-        # test_dataset = pandas.read_csv("text_test_data.csv", index_col=2, encoding='utf-8', delimiter=";",
-        #                                engine="python")
-        # test_dataset = test_dataset.replace(np.nan, '', regex=True)
-        # test_dataset = test_dataset.sort_index()
-        # tfidf = pickle.load(open("binaries/tfidf(0.1).pkl", "rb"))
-        # features = tfidf.transform(test_dataset.text)
-        features = pickle.load(open("gensim_fasttext/cluster_labels_tfidf.pkl", "rb")).reshape((-1,1))
-        test_dataset, tfidf = None, None
-        topics = pickle.load(open("gensim_lda/topics_20.pkl", "rb"))
-        # w2v_labels = pickle.load(open("w2v_feature_array.pkl", "rb"))
-        w2v_labels = pickle.load(open("cluster_labels.pkl", "rb")).reshape((-1,1))
-
+    # if not os.path.exists("binaries/tfidf(0.1).pkl"):
+    #     test_dataset = pandas.read_csv("text_test_data.csv", index_col=3, encoding='utf-8', delimiter=";", engine="python")
+    #     test_dataset = test_dataset.replace(np.nan, '', regex=True)
+    #     test_dataset = test_dataset.sort_index()
+    #     tfidf = TfidfVectorizer(min_df=0.2, analyzer='word', stop_words="english", ngram_range=(1, 2))
+    #     features = tfidf.fit_transform(test_dataset.text)
+    #     lda_model = gensim.models.LdaMulticore.load("gensim_lda/lda_model_20.pkl")
+    #     bow_corpus = pickle.load(open("gensim_lda/bow_corpus.pkl", "rb"))
+    #     topics = np.array([[doc_topics[0][0]] for doc_topics in lda_model.get_document_topics(bow_corpus)])
+    #     lda_model, bow_corpus = None, None
+    #     pickle.dump(tfidf, open("tfidf.pkl", "wb"))
+    # else:
+    #     # test_dataset = pandas.read_csv("text_test_data.csv", index_col=2, encoding='utf-8', delimiter=";",
+    #     #                                engine="python")
+    #     # test_dataset = test_dataset.replace(np.nan, '', regex=True)
+    #     # test_dataset = test_dataset.sort_index()
+    #     # tfidf = pickle.load(open("binaries/tfidf(0.1).pkl", "rb"))
+    #     # features = tfidf.transform(test_dataset.text)
+    #     features = pickle.load(open("gensim_fasttext/cluster_labels_tfidf.pkl", "rb")).reshape((-1,1))
+    #     test_dataset, tfidf = None, None
+    #     topics = pickle.load(open("gensim_lda/topics_20.pkl", "rb"))
+    #     # w2v_labels = pickle.load(open("w2v_feature_array.pkl", "rb"))
+    #     w2v_labels = pickle.load(open("cluster_labels.pkl", "rb")).reshape((-1,1))
     array = dataset.values
-    X = array[:, 0:10]
-    Y = array[:, 10]
+    X = array[:, 0:-1]
+    Y = array[:, -1]
     # X = sparse.hstack([features, topics, w2v_labels, X])
-    X = np.concatenate((features, topics, w2v_labels, X), axis=1)
+    # X = np.concatenate((features, topics, w2v_labels, X), axis=1)
     # X = sparse.hstack([features, X])
     # features, topics, array = None, None, None
     np.save("x.npy", X)
@@ -146,15 +153,15 @@ print("Correlations: {}".format(dataset.corr()))
 # X_new=fit.transform(X_train)
 # print("Select k best with chi2: {}".format(X_new.shape))
 #
-# lsvc = LinearSVC(C=0.01, penalty="l1", dual=False,max_iter=2000).fit(X, Y)
+# lsvc = LinearSVC(C=0.01, penalty="l1", dual=False,max_iter=2000).fit(X_train, Y_train)
 # model = SelectFromModel(lsvc, prefit=True)
-# X_new = model.transform(X)
+# X_new = model.transform(X_train)
 # print("Linear SVC: {}".format(X_new.shape))
 # print(model.get_support())
 #
 # estimator = LogisticRegression(solver='lbfgs')
 # selector = RFE(estimator, 5)
-# selector = selector.fit(X, Y)
+# selector = selector.fit(X_train, Y_train)
 # print("RFE count features: {}, features: {}, ranking: {}".format(selector.n_features_, selector.support_, selector.ranking_))
 #
 # pca = decomposition.PCA(n_components=12)
@@ -169,14 +176,14 @@ print("Correlations: {}".format(dataset.corr()))
 # print("ICA: {}".format(x_reduced.shape))
 
 models = []
-from sklearn.preprocessing import MinMaxScaler
-scaling = MinMaxScaler(feature_range=(0, 1)).fit(X_train)
-X_train = scaling.transform(X_train)
-X_validation = scaling.transform(X_validation)
+# from sklearn.preprocessing import MinMaxScaler
+# scaling = MinMaxScaler(feature_range=(0, 1)).fit(X_train)
+# X_train = scaling.transform(X_train)
+# X_validation = scaling.transform(X_validation)
 
 models.append(('LR', LogisticRegression(solver='lbfgs', class_weight="balanced")))
 models.append(('LDA', LinearDiscriminantAnalysis()))
-# models.append(('KNN', KNeighborsClassifier()))
+models.append(('KNN', KNeighborsClassifier()))
 models.append(('DecTree', DecisionTreeClassifier()))
 models.append(('NB', GaussianNB()))
 models.append(('MNB', MultinomialNB()))
@@ -252,9 +259,9 @@ print(classification_report(Y_validation, predictions))
 # for tick in ax.get_xticklabels():
 #     tick.set_rotation(70)
 # plt.savefig("test_data.png")
-with open("test/minimal_test.txt", "w") as file:
-    for name, result in zip(names, results):
-        file.write("{},{}\n".format(name, result))
+# with open("test/minimal_test.txt", "w") as file:
+#     for name, result in zip(names, results):
+#         file.write("{},{}\n".format(name, result))
 # plt.show()
 hyper_parameters = {
     "Ada": {
