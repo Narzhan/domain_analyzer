@@ -97,8 +97,8 @@ if not os.path.exists("binaries/x(0.3).npy") and not os.path.exists("binaries/y(
     # X = np.concatenate((features, topics, w2v_labels, X), axis=1)
     # X = sparse.hstack([features, X])
     # features, topics, array = None, None, None
-    np.save("x.npy", X)
-    np.save("y.npy", Y)
+    # np.save("x.npy", X)
+    # np.save("y.npy", Y)
 else:
     X = np.load("binaries/x(0.1).npy").tolist().toarray()
     Y = np.load("binaries/y(0.1).npy")
@@ -114,6 +114,12 @@ scoring = 'accuracy'
 
 print("Variances: {}".format(dataset.var()))
 print("Correlations: {}".format(dataset.corr()))
+knn = KNeighborsClassifier()
+knn.fit(X_train, Y_train)
+predictions = knn.predict(X_validation)
+print(accuracy_score(Y_validation, predictions))
+print(confusion_matrix(Y_validation, predictions))
+print(classification_report(Y_validation, predictions))
 # rf_exp = ExtraTreesClassifier(n_estimators=50)
 # rf_exp = rf_exp.fit(X_train, Y_train)
 # importances = list(rf_exp.feature_importances_)
@@ -209,7 +215,7 @@ names = []
 start_time = time.time()
 for name, model in models:
     try:
-        kfold = model_selection.KFold(n_splits=10, random_state=seed)
+        kfold = model_selection.KFold(n_splits=10, random_state=seed, shuffle=True)
         cv_results = model_selection.cross_val_score(model, X_train, Y_train, cv=kfold, scoring=scoring)
         results.append(cv_results)
         names.append(name)
