@@ -5,6 +5,7 @@ from catboost import CatBoostClassifier
 from sklearn import model_selection
 from sklearn.ensemble import BaggingClassifier, RandomForestClassifier, AdaBoostClassifier, GradientBoostingClassifier
 from xgboost import XGBClassifier
+from sklearn.metrics import classification_report, confusion_matrix, accuracy_score
 import gc
 
 # array = dataset.values
@@ -62,7 +63,7 @@ def models():
     print("Test started")
     models = []
     models.append(('BMeta', BaggingClassifier()))
-    models.append(('RForest', RandomForestClassifier(n_estimators=100, n_jobs=-1)))
+    models.append(('RForest', RandomForestClassifier(n_estimators=100)))
     models.append(('Ada', AdaBoostClassifier()))
     models.append(('GBC', GradientBoostingClassifier()))
     models.append(('XGB', XGBClassifier()))
@@ -83,21 +84,40 @@ def models():
             print(msg)
 
 
-for i in [100, 150]:
+def train_model(name: str):
+    classifier = RandomForestClassifier(n_estimators=100, n_jobs=-1)
+    classifier.fit(X_train, Y_train)
+    X_predicted = classifier.predict(X_train)
+    predictions = classifier.predict(X_validation)
+    print(accuracy_score(Y_validation, predictions))
+    print(classification_report(Y_validation, predictions))
+    result_dataset = pd.DataFrame(data=np.concatenate((X_predicted, predictions), axis=0),
+                                  index=np.concatenate((domains_train, domains_test), axis=0), columns=[name])
+    result_dataset.to_csv("splitted_text/tf_idf/result_data.csv")
+    pickle.dump(classifier, open("splitted_text/tf_idf/model.pkl", "wb"))
+
+
+for i in [2]:
     print("Going over {}% min df".format(i))
     print("#######################################")
-    dataset = load_data("splitted_text/tf_idf/topics_{}.npy".format(i))
-    dataset.to_csv("splitted_text/tf_idf/dataframe_{}.csv".format(i))
-    # dataset = pd.read_csv("splitted_text/tf_idf/dataframe_{}.csv".format(i), index_col=0)
+    # dataset = load_data("splitted_text/tf_idf/topics_{}.npy".format(i))
+    # dataset.to_csv("splitted_text/tf_idf/dataframe_{}.csv".format(i))
+    dataset = pd.read_csv("splitted_text/tf_idf/dataframe_{}.csv".format(i), index_col=0)
     array = dataset.values
+    domains = dataset.index.values
     dataset = None
     X = array[:, 0:-1]
     Y = array[:, -1]
+
     print("array created")
     array = None
     validation_size = 0.20
     seed = 7
-    X_train, X_validation, Y_train, Y_validation = model_selection.train_test_split(X, Y, test_size=validation_size,
-                                                                                    random_state=seed)
+    X_train, X_validation, Y_train, Y_validation, domains_train, domains_test = model_selection.train_test_split(X, Y,
+                                                                                                                 domains,
+                                                                                                                 test_size=validation_size,
+                                                                                                                 random_state=seed)
+    domains = None
     X, Y = None, None
-    models()
+    train_model("topics")
+    # models()
