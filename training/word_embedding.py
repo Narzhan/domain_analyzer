@@ -9,7 +9,7 @@ from keras import Input, Model
 from keras.layers import Embedding, SpatialDropout1D, LSTM, Dense, Dropout, GRU, Bidirectional
 from keras.preprocessing.text import Tokenizer
 from numpy import asarray
-from sklearn.metrics import confusion_matrix
+from sklearn.metrics import confusion_matrix, classification_report
 from sklearn.model_selection import train_test_split
 from keras.preprocessing.sequence import pad_sequences
 from nltk.stem import WordNetLemmatizer, SnowballStemmer
@@ -22,14 +22,14 @@ dataset = dataset.sort_index()
 languages = ["en", "cs", "de", "es", "fr", "ja", "ru", "zh"]
 # filter_languages = ["en", "de", "es", "fr", "ja", "ru", "zh"]
 # pretrained_dataset = dataset.loc[dataset["language"].isin(languages)]
-customtrain_dataset = dataset.loc[~dataset["language"].isin(languages)]
+# customtrain_dataset = dataset.loc[~dataset["language"].isin(languages)]
 
 
-def preprocess(text):
-    # convert to list the input
-    tokens = [key.lower() for key in nltk.word_tokenize(text)]
-    words = [word for word in tokens if word.isalpha()]
-    return words
+# def preprocess(text):
+#     # convert to list the input
+#     tokens = [key.lower() for key in nltk.word_tokenize(text)]
+#     words = [word for word in tokens if word.isalpha()]
+#     return words
 
 
 # stemmer = SnowballStemmer('english')
@@ -47,7 +47,7 @@ def preprocess(text):
 #     return result
 
 # seq_lengths = dataset.text.apply(lambda x: len(x.split(' ')))
-# print(seq_lengths.describe())
+# print(int(seq_lengths.describe()["max"]))
 
 # processed_docs = customtrain_dataset['text'].map(preprocess)
 # processed_docs = pickle.load(open("splitted_docs.pkl", "rb"))
@@ -56,7 +56,6 @@ feature_size = 300
 window_context = 10
 min_word_count = 5
 sample = 1e-3
-
 
 ####### Fast Text
 # fast_text = FastText(processed_docs, size=feature_size,
@@ -71,13 +70,13 @@ sample = 1e-3
 #                               window=window_context, min_count=min_word_count,
 #                               sample=sample, iter=10)
 # w2v_model.save("w2v_model.pkl")
-w2v_model = word2vec.Word2Vec.load("splitted_text/word_embedding/w2v/w2v_custom_model.pkl")
+# w2v_model = word2vec.Word2Vec.load("splitted_text/word_embedding/w2v/w2v_custom_model.pkl")
 
 # t = Tokenizer()
 # t.fit_on_texts(dataset.text)
-t= pickle.load(open("splitted_text/word_embedding/tokenizer.pkl","rb"))
+t = pickle.load(open("splitted_text/word_embedding/tokenizer.pkl", "rb"))
 vocab_size = len(t.word_index) + 1
-embedding_matrix = np.zeros((vocab_size, 300))
+# embedding_matrix = np.zeros((vocab_size, 300))
 # files_location = ["wiki.cs.vec", "wiki.de.vec", "wiki.en.vec", "wiki.es.vec", "wiki.fr.vec", "wiki.ja.vec",
 #                   "wiki.ru.vec", "wiki.zh.vec"]
 # for file_location in files_location:
@@ -107,12 +106,13 @@ embedding_matrix = np.zeros((vocab_size, 300))
 #     embedding_vector = w2v_model.wv[w2v_model.wv.index2word[i]]
 #     if embedding_vector is not None:
 #         embedding_matrix[i] = embedding_vector
-for word in w2v_model.wv.vocab:
-    if word in t.word_index:
-        embedding_vector = w2v_model.wv[word]
-        if embedding_vector is not None:
-            embedding_matrix[t.word_index[word]] = embedding_vector
-np.save("splitted_text/word_embedding/w2v_embedding_martix_custom.npy", embedding_matrix)
+# w2v_model = gensim.models.Word2Vec.load("de.bin")
+# for word in w2v_model.wv.vocab:
+#     if word in t.word_index:
+#         embedding_vector = w2v_model.wv[word]
+#         if embedding_vector is not None:
+#             embedding_matrix[t.word_index[word]] = embedding_vector
+# np.save("splitted_text/word_embedding/w2v_embedding_martix_custom.npy", embedding_matrix)
 # from gensim.models import KeyedVectors
 # # Load vectors directly from the file
 # model = KeyedVectors.load_word2vec_format('data/GoogleGoogleNews-vectors-negative300.bin', binary=True)
@@ -128,11 +128,12 @@ X_train, X_valid, y_train, y_valid = train_test_split(X_train_seq_trunc, dataset
                                                       random_state=7)
 X_train_seq_trunc = None
 dataset, t = None, None
-num_epoches = 15
-batch = 64
+num_epoches = 6
+batch = 8049
 num_neurons = 100
 
-def create_rnn_lstm():
+
+def create_rnn_lstm(method: str):
     # Add an Input Layer
     input_layer = Input((MAX_LEN,))
 
@@ -154,15 +155,16 @@ def create_rnn_lstm():
     model.compile(optimizer="adam", loss='binary_crossentropy', metrics=['accuracy'])
 
     # Fitting our model
-    history = model.fit(X_train, y_train, batch_size=batch, nb_epoch=num_epoches)
+    history = model.fit(X_train, y_train, batch_size=batch, epochs=num_epoches)
+    model.save("lstm_{}.h5".format(method))
     evaluate_model(model)
-    eval_metric(history, "acc", "en")
-    eval_metric(history, "loss", "en")
-    eval_metric(history, "acc", "cz")
-    eval_metric(history, "loss", "cz")
+    eval_metric(history, "acc", "en", method, "lstm")
+    eval_metric(history, "loss", "en", method, "lstm")
+    eval_metric(history, "acc", "cz", method, "lstm")
+    eval_metric(history, "loss", "cz", method, "lstm")
 
 
-def create_rnn_gru():
+def create_rnn_gru(method: str):
     # Add an Input Layer
     input_layer = Input((MAX_LEN,))
 
@@ -185,14 +187,15 @@ def create_rnn_gru():
 
     # Fitting our model
     history = model.fit(X_train, y_train, batch_size=batch, epochs=num_epoches)
+    model.save("gru_{}.h5".format(method))
     evaluate_model(model)
-    eval_metric(history, "acc", "en")
-    eval_metric(history, "loss", "en")
-    eval_metric(history, "acc", "cz")
-    eval_metric(history, "loss", "cz")
+    eval_metric(history, "acc", "en", method, "gru")
+    eval_metric(history, "loss", "en", method, "gru")
+    eval_metric(history, "acc", "cz", method, "gru")
+    eval_metric(history, "loss", "cz", method, "gru")
 
 
-def create_bidirectional_rnn():
+def create_bidirectional_rnn(method: str):
     # Add an Input Layer
     input_layer = Input((MAX_LEN,))
 
@@ -214,14 +217,16 @@ def create_bidirectional_rnn():
     model.compile(optimizer="adam", loss='binary_crossentropy', metrics=['accuracy'])
 
     # Fitting our model
-    history = model.fit(X_train, y_train, batch_size=batch, nb_epoch=num_epoches)
+    history = model.fit(X_train, y_train, batch_size=batch, epochs=num_epoches)
+    model.save("bilstm_{}.h5".format(method))
     evaluate_model(model)
-    eval_metric(history, "acc", "en")
-    eval_metric(history, "loss", "en")
-    eval_metric(history, "acc", "cz")
-    eval_metric(history, "loss", "cz")
+    eval_metric(history, "acc", "en", method, "bilstm")
+    eval_metric(history, "loss", "en", method, "bilstm")
+    eval_metric(history, "acc", "cz", method, "bilstm")
+    eval_metric(history, "loss", "cz", method, "bilstm")
 
-def without_embedding():
+
+def without_embedding(method: str):
     # Add an Input Layer
     input_layer = Input((MAX_LEN,))
 
@@ -242,14 +247,16 @@ def without_embedding():
     model.compile(optimizer="adam", loss='binary_crossentropy', metrics=['accuracy'])
 
     # Fitting our model
-    history = model.fit(X_train, y_train, batch_size=batch, nb_epoch=num_epoches)
+    history = model.fit(X_train, y_train, batch_size=batch, epochs=num_epoches)
+    model.save("no_mbedding_{}.h5".format(method))
     evaluate_model(model)
-    eval_metric(history, "acc", "en")
-    eval_metric(history, "loss", "en")
-    eval_metric(history, "acc", "cz")
-    eval_metric(history, "loss", "cz")
+    eval_metric(history, "acc", "en", method, "lstm")
+    eval_metric(history, "loss", "en", method, "lstm")
+    eval_metric(history, "acc", "cz", method, "lstm")
+    eval_metric(history, "loss", "cz", method, "lstm")
 
-def eval_metric(history, metric_name, lang):
+
+def eval_metric(history, metric_name, lang, emb, nn):
     '''
     Function to evaluate a trained model on a chosen metric.
     Training and validation metric are plotted in a
@@ -274,7 +281,10 @@ def eval_metric(history, metric_name, lang):
     plt.plot(e, metric, 'bo', label=train + metric_name)
     plt.plot(e, val_metric, 'b', label=valid + metric_name)
     plt.legend()
-    plt.show()
+    try:
+        plt.savefig("{}_{}_{}_{}.png".format(emb, nn, metric_name, lang))
+    except Exception as e:
+        print(e)
 
 
 def evaluate_model(classifier):
@@ -283,9 +293,22 @@ def evaluate_model(classifier):
     y_pred = (y_pred > 0.5)
     cm = confusion_matrix(y_valid, y_pred)
     print(cm)
+    print(classification_report(y_valid, y_pred))
     diagonal_sum = cm.trace()
     sum_of_all_elements = cm.sum()
     print(diagonal_sum / sum_of_all_elements)
+
+
+for emb_type in ["w2v_embedding_martix_mixed.npy", "fasttext_embedding_martix_custom.npy",
+                 "fasttext_embedding_martix_mixed.npy", "w2v_embedding_martix_custom.npy"]:
+    embedding_matrix = np.load(emb_type)
+    method = emb_type.replace("_embedding_martix", "").replace(".npy", "")
+    print(method)
+    print("#####################")
+    create_rnn_lstm(method)
+    create_rnn_gru(method)
+    create_bidirectional_rnn(method)
+without_embedding("no_emb")
 
 # #Glove model
 # model_glove = Sequential()
