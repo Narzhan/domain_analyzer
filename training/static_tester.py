@@ -107,7 +107,9 @@ seed = 7
 X_train, X_validation, Y_train, Y_validation, indices_train, indices_test = model_selection.train_test_split(X, Y,
                                                                                                              dataset.index,
                                                                                                              test_size=validation_size,
-                                                                                                             random_state=seed)
+                                                                                                             random_state=seed,
+                                                                                                             stratify=Y
+                                                                                                             )
 X, Y, = None, None
 # X_train = X_train.toarray()
 scoring = 'accuracy'
@@ -182,14 +184,14 @@ print(classification_report(Y_validation, predictions))
 # print("ICA: {}".format(x_reduced.shape))
 
 models = []
-# from sklearn.preprocessing import MinMaxScaler
-# scaling = MinMaxScaler(feature_range=(0, 1)).fit(X_train)
-# X_train = scaling.transform(X_train)
-# X_validation = scaling.transform(X_validation)
+from sklearn.preprocessing import MinMaxScaler
+scaling = MinMaxScaler(feature_range=(0, 1)).fit(X_train)
+X_train = scaling.transform(X_train)
+X_validation = scaling.transform(X_validation)
 
 models.append(('LR', LogisticRegression(solver='lbfgs', class_weight="balanced")))
 models.append(('LDA', LinearDiscriminantAnalysis()))
-models.append(('KNN', KNeighborsClassifier()))
+# models.append(('KNN', KNeighborsClassifier()))
 models.append(('DecTree', DecisionTreeClassifier()))
 models.append(('NB', GaussianNB()))
 models.append(('MNB', MultinomialNB()))
