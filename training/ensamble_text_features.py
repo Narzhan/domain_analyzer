@@ -1,11 +1,11 @@
 import pandas as pd
 import numpy as np
 import pickle
-#from catboost import CatBoostClassifier
-#from sklearn import model_selection
-#from sklearn.ensemble import BaggingClassifier, RandomForestClassifier, AdaBoostClassifier, GradientBoostingClassifier
-#from xgboost import XGBClassifier
-#import lightgbm as lgb
+from catboost import CatBoostClassifier
+from sklearn import model_selection
+from sklearn.ensemble import BaggingClassifier, RandomForestClassifier, AdaBoostClassifier, GradientBoostingClassifier
+from xgboost import XGBClassifier
+import lightgbm as lgb
 # array = dataset.values
 # X = array[:, 0:10]
 # Y = array[:, 10]
@@ -15,6 +15,7 @@ import pickle
 #                                                                                                              dataset.index,
 #                                                                                                         test_size=validation_size,
 #                                                                                                              random_state=seed)
+from sklearn.metrics import accuracy_score, classification_report
 
 
 def load_data(file: str):
@@ -50,7 +51,7 @@ def load_data(file: str):
     #tmp = final_dataset.features.apply(pd.Series)
     #final_dataset.drop(["features"], axis=1)
     #final_dataset = tmp.merge(final_dataset, right_index=True, left_index=True)
-    #final_dataset = final_dataset.features.apply(pd.Series).merge(final_dataset, right_index=True, left_index=True).drop(["features"], axis=1)
+    # final_dataset = final_dataset.features.apply(pd.Series).merge(final_dataset, right_index=True, left_index=True).drop(["features"], axis=1)
     temp_dataset = pd.DataFrame(list(domain_mapping.values()), index=list(domain_mapping.keys()))
     domain_mapping = None
     temp_dataset.to_csv("tf_idf/temp_dataset.csv")
@@ -61,15 +62,16 @@ def load_data(file: str):
     print("final done")
     return final_dataset
 
+
 def models():
     print("Test started")
     models = []
-#    models.append(('BMeta', BaggingClassifier()))
-#    models.append(('RForest', RandomForestClassifier(n_estimators=100)))
-#    models.append(('Ada', AdaBoostClassifier()))
-#    models.append(('GBC', GradientBoostingClassifier()))
+    models.append(('BMeta', BaggingClassifier()))
+    models.append(('RForest', RandomForestClassifier(n_estimators=100)))
+    models.append(('Ada', AdaBoostClassifier()))
+    models.append(('GBC', GradientBoostingClassifier()))
     models.append(('XGB', XGBClassifier()))
-#    models.append(('CatBoost', CatBoostClassifier(iterations=2, learning_rate=1, depth=2, loss_function='Logloss')))
+    models.append(('CatBoost', CatBoostClassifier(iterations=2, learning_rate=1, depth=2, loss_function='Logloss')))
     scoring = "accuracy"
     results = []
     names = []
@@ -85,16 +87,30 @@ def models():
         else:
             print(msg)
 
+
+def train_model(name: str):
+    classifier = RandomForestClassifier(n_estimators=100, n_jobs=-1)
+    classifier.fit(X_train, Y_train)
+    X_predicted = classifier.predict(X_train)
+    predictions = classifier.predict(X_validation)
+    print(accuracy_score(Y_validation, predictions))
+    print(classification_report(Y_validation, predictions))
+    result_dataset = pd.DataFrame(data=np.concatenate((X_predicted, predictions), axis=0),
+                                  index=np.concatenate((domains_train, domains_test), axis=0), columns=[name])
+    result_dataset.to_csv("splitted_text/tf_idf/result_data.csv")
+    pickle.dump(classifier, open("splitted_text/tf_idf/model.pkl", "wb"))
+
+
 def light_gbm():
-        # train_data = lgb.Dataset(X_train, label=Y_train)
+    # train_data = lgb.Dataset(X_train, label=Y_train)
     lgb_train = lgb.Dataset(X_train, Y_train)
     lgb_eval = lgb.Dataset(X_validation, Y_validation, reference=lgb_train)
-        # param = {'num_leaves': 31, 'num_trees': 50, 'objective': 'binary', 'metric': 'auc'}
+    # param = {'num_leaves': 31, 'num_trees': 50, 'objective': 'binary', 'metric': 'auc'}
     param = {
-    'task': 'train',
-    'boosting_type': 'gbdt',
-    'objective': 'binary',
-    'metric': {'l2', 'auc', "binary_logloss"},
+        'task': 'train',
+        'boosting_type': 'gbdt',
+        'objective': 'binary',
+        'metric': {'l2', 'auc', "binary_logloss"},
     'num_leaves': 31,
     'learning_rate': 0.05,
     'feature_fraction': 0.9,
@@ -124,6 +140,7 @@ for i in [1]:
     dataset.to_csv("tf_idf/dataframe_{}.csv".format(i))
     #dataset = pd.read_csv("tf_idf/dataframe_{}.csv".format(i), index_col=0, encoding='utf-8')
     array = dataset.values
+    domains = dataset.index.values
     dataset=None
     X = array[:, 0:-1]
     Y = array[:, -1]
@@ -131,8 +148,7 @@ for i in [1]:
     array = None
     validation_size = 0.20
     seed = 7
-    X_train, X_validation, Y_train, Y_validation = model_selection.train_test_split(X,Y, test_size=validation_size,
-                                                                                                                   random_state=seed)
+    X_train, X_validation, Y_train, Y_validation, domains_train, domains_test = model_selection.train_test_split(X,Y, domains, test_size=validation_size,random_state=seed)
     X, Y = None, None
     light_gbm()
     models()
