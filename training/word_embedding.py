@@ -233,7 +233,7 @@ def create_bidirectional_rnn(method: str):
     # eval_metric(history, "loss", "cz", method, "bilstm")
 
 
-def without_embedding(method: str):
+def without_embedding():
     # Add an Input Layer
     input_layer = Input((MAX_LEN,))
 
@@ -257,7 +257,7 @@ def without_embedding(method: str):
     history = model.fit(X_train, y_train, validation_data=(X_valid, y_valid), batch_size=batch, epochs=num_epoches)
     model.save("no_mbedding_lstm.h5")
     evaluate_model(model)
-    with open("train_results_{}.json".format(method), "w") as file:
+    with open("train_results_no_embedding.json", "w") as file:
         json.dump(history.history, file)
     # eval_metric(history, "acc", "en", method, "lstm")
     # eval_metric(history, "loss", "en", method, "lstm")
@@ -313,7 +313,7 @@ for emb_type in ["w2v_embedding_martix_mixed.npy", "fasttext_embedding_martix_cu
     create_rnn_lstm(method)
     create_rnn_gru(method)
     create_bidirectional_rnn(method)
-without_embedding("no_emb")
+without_embedding()
 
 # #Glove model
 # model_glove = Sequential()
