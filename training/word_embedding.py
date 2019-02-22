@@ -126,7 +126,7 @@ MAX_LEN = 134
 X_train_seq_trunc = pad_sequences(t.texts_to_sequences(dataset.text), maxlen=MAX_LEN)
 # X_test_seq_trunc = pad_sequences(t.texts_to_sequences(X_test), maxlen=MAX_LEN)
 X_train, X_valid, y_train, y_valid = train_test_split(X_train_seq_trunc, dataset.label, test_size=0.2,
-                                                      random_state=7)
+                                                      random_state=7, stratify=dataset.label)
 X_train_seq_trunc = None
 dataset, t = None, None
 num_epoches = 6
