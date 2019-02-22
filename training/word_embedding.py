@@ -1,5 +1,6 @@
 import pandas, nltk
 import numpy as np
+import json
 import string
 from gensim.models import word2vec
 import matplotlib.pyplot as plt
@@ -9,7 +10,7 @@ from keras import Input, Model
 from keras.layers import Embedding, SpatialDropout1D, LSTM, Dense, Dropout, GRU, Bidirectional
 from keras.preprocessing.text import Tokenizer
 from numpy import asarray
-from sklearn.metrics import confusion_matrix, classification_report
+from sklearn.metrics import confusion_matrix, classification_report, accuracy_score
 from sklearn.model_selection import train_test_split
 from keras.preprocessing.sequence import pad_sequences
 from nltk.stem import WordNetLemmatizer, SnowballStemmer
@@ -155,13 +156,15 @@ def create_rnn_lstm(method: str):
     model.compile(optimizer="adam", loss='binary_crossentropy', metrics=['accuracy'])
 
     # Fitting our model
-    history = model.fit(X_train, y_train, batch_size=batch, epochs=num_epoches)
+    history = model.fit(X_train, y_train, validation_data=(X_valid, y_valid), batch_size=batch, epochs=num_epoches)
     model.save("lstm_{}.h5".format(method))
     evaluate_model(model)
-    eval_metric(history, "acc", "en", method, "lstm")
-    eval_metric(history, "loss", "en", method, "lstm")
-    eval_metric(history, "acc", "cz", method, "lstm")
-    eval_metric(history, "loss", "cz", method, "lstm")
+    with open("train_results_{}.json".format(method), "w") as file:
+        json.dump(history.history, file)
+    # eval_metric(history, "acc", "en", method, "lstm")
+    # eval_metric(history, "loss", "en", method, "lstm")
+    # eval_metric(history, "acc", "cz", method, "lstm")
+    # eval_metric(history, "loss", "cz", method, "lstm")
 
 
 def create_rnn_gru(method: str):
@@ -186,13 +189,15 @@ def create_rnn_gru(method: str):
     model.compile(optimizer="adam", loss='binary_crossentropy', metrics=['accuracy'])
 
     # Fitting our model
-    history = model.fit(X_train, y_train, batch_size=batch, epochs=num_epoches)
+    history = model.fit(X_train, y_train, validation_data=(X_valid, y_valid), batch_size=batch, epochs=num_epoches)
     model.save("gru_{}.h5".format(method))
     evaluate_model(model)
-    eval_metric(history, "acc", "en", method, "gru")
-    eval_metric(history, "loss", "en", method, "gru")
-    eval_metric(history, "acc", "cz", method, "gru")
-    eval_metric(history, "loss", "cz", method, "gru")
+    with open("train_results_{}.json".format(method), "w") as file:
+        json.dump(history.history, file)
+    # eval_metric(history, "acc", "en", method, "gru")
+    # eval_metric(history, "loss", "en", method, "gru")
+    # eval_metric(history, "acc", "cz", method, "gru")
+    # eval_metric(history, "loss", "cz", method, "gru")
 
 
 def create_bidirectional_rnn(method: str):
@@ -217,13 +222,15 @@ def create_bidirectional_rnn(method: str):
     model.compile(optimizer="adam", loss='binary_crossentropy', metrics=['accuracy'])
 
     # Fitting our model
-    history = model.fit(X_train, y_train, batch_size=batch, epochs=num_epoches)
+    history = model.fit(X_train, y_train, validation_data=(X_valid, y_valid), batch_size=batch, epochs=num_epoches)
     model.save("bilstm_{}.h5".format(method))
     evaluate_model(model)
-    eval_metric(history, "acc", "en", method, "bilstm")
-    eval_metric(history, "loss", "en", method, "bilstm")
-    eval_metric(history, "acc", "cz", method, "bilstm")
-    eval_metric(history, "loss", "cz", method, "bilstm")
+    with open("train_results_{}.json".format(method), "w") as file:
+        json.dump(history.history, file)
+    # eval_metric(history, "acc", "en", method, "bilstm")
+    # eval_metric(history, "loss", "en", method, "bilstm")
+    # eval_metric(history, "acc", "cz", method, "bilstm")
+    # eval_metric(history, "loss", "cz", method, "bilstm")
 
 
 def without_embedding(method: str):
@@ -247,13 +254,15 @@ def without_embedding(method: str):
     model.compile(optimizer="adam", loss='binary_crossentropy', metrics=['accuracy'])
 
     # Fitting our model
-    history = model.fit(X_train, y_train, batch_size=batch, epochs=num_epoches)
-    model.save("no_mbedding_{}.h5".format(method))
+    history = model.fit(X_train, y_train, validation_data=(X_valid, y_valid), batch_size=batch, epochs=num_epoches)
+    model.save("no_mbedding_lstm.h5")
     evaluate_model(model)
-    eval_metric(history, "acc", "en", method, "lstm")
-    eval_metric(history, "loss", "en", method, "lstm")
-    eval_metric(history, "acc", "cz", method, "lstm")
-    eval_metric(history, "loss", "cz", method, "lstm")
+    with open("train_results_{}.json".format(method), "w") as file:
+        json.dump(history.history, file)
+    # eval_metric(history, "acc", "en", method, "lstm")
+    # eval_metric(history, "loss", "en", method, "lstm")
+    # eval_metric(history, "acc", "cz", method, "lstm")
+    # eval_metric(history, "loss", "cz", method, "lstm")
 
 
 def eval_metric(history, metric_name, lang, emb, nn):
@@ -289,14 +298,10 @@ def eval_metric(history, metric_name, lang, emb, nn):
 
 def evaluate_model(classifier):
     y_pred = classifier.predict(X_valid)
-
     y_pred = (y_pred > 0.5)
-    cm = confusion_matrix(y_valid, y_pred)
-    print(cm)
+    print(accuracy_score(y_valid, y_pred))
+    print(confusion_matrix(y_valid, y_pred))
     print(classification_report(y_valid, y_pred))
-    diagonal_sum = cm.trace()
-    sum_of_all_elements = cm.sum()
-    print(diagonal_sum / sum_of_all_elements)
 
 
 for emb_type in ["w2v_embedding_martix_mixed.npy", "fasttext_embedding_martix_custom.npy",
