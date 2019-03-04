@@ -6,25 +6,17 @@ from sklearn import model_selection
 from sklearn.ensemble import BaggingClassifier, RandomForestClassifier, AdaBoostClassifier, GradientBoostingClassifier
 from xgboost import XGBClassifier
 import lightgbm as lgb
-# array = dataset.values
-# X = array[:, 0:10]
-# Y = array[:, 10]
-# validation_size = 0.20
-# seed = 7
-# X_train, X_validation, Y_train, Y_validation, indices_train, indices_test = model_selection.train_test_split(X, Y,
-#                                                                                                              dataset.index,
-#                                                                                                         test_size=validation_size,
-#                                                                                                              random_state=seed)
 from sklearn.metrics import accuracy_score, classification_report
 
 
 def load_data(file: str):
-    dataset = pd.read_csv("text_test_data_splitted.csv", index_col=3, encoding='utf-8', delimiter=";",
-                              engine="python")
+    dataset = pd.read_csv("text_test_data_splitted.csv", index_col=3, encoding='utf-8', delimiter=";", engine="python")
     dataset = dataset.replace(np.nan, '', regex=True)
     dataset = dataset.sort_index()
-    feature_array = pickle.load(open(file, "rb"))
-    #feature_array = np.load(file)
+    source_dataset = pd.read_csv(file, index_col=0, encoding='utf-8')
+    source_dataset = source_dataset.sort_index()
+    # feature_array = pickle.load(open(file, "rb"))
+    # feature_array = np.load(file)
     mapper = {}
     domain_mapping = {}
     row_id = 0
@@ -33,7 +25,7 @@ def load_data(file: str):
             mapper[i].append(row_id)
         except KeyError:
             mapper[i] = [row_id]
-        #domain_mapping[i] = {}
+        # domain_mapping[i] = {}
         domain_mapping[i] = {"label": row["label"]}
         row_id += 1
     dataset, row_id = None, None
@@ -41,23 +33,22 @@ def load_data(file: str):
     for domain, id_list in mapper.items():
         temp_list = []
         for ids in id_list:
-            temp_list.extend(feature_array[ids].toarray()[0])
-            #temp_list.extend(feature_array[ids])
-        domain_mapping[domain]["features"] = tuple(temp_list)
+            temp_list.extend(source_dataset.iloc[ids]["we"])
+            # temp_list.extend(feature_array[ids].toarray()[0])
+            # temp_list.extend(feature_array[ids])
+        domain_mapping[domain]["features"] = tuple(map(lambda x: 1 if x else 0, temp_list))
+        # domain_mapping[domain]["features"] = tuple(temp_list)
     print("features done")
     feature_array, mapper = None, None
-    #pickle.dump(domain_mapping, open("domain_mapping.pkl", "wb"))
-    #final_dataset = pd.DataFrame(list(domain_mapping.values()), index=domain_mapping.keys())
-    #tmp = final_dataset.features.apply(pd.Series)
-    #final_dataset.drop(["features"], axis=1)
-    #final_dataset = tmp.merge(final_dataset, right_index=True, left_index=True)
+    # pickle.dump(domain_mapping, open("domain_mapping.pkl", "wb"))
+    # final_dataset = pd.DataFrame(list(domain_mapping.values()), index=domain_mapping.keys())
+    # tmp = final_dataset.features.apply(pd.Series)
+    # final_dataset.drop(["features"], axis=1)
+    # final_dataset = tmp.merge(final_dataset, right_index=True, left_index=True)
     # final_dataset = final_dataset.features.apply(pd.Series).merge(final_dataset, right_index=True, left_index=True).drop(["features"], axis=1)
     temp_dataset = pd.DataFrame(list(domain_mapping.values()), index=list(domain_mapping.keys()))
-    domain_mapping = None
-    temp_dataset.to_csv("tf_idf/temp_dataset.csv")
     final_dataset = pd.DataFrame(temp_dataset['features'].values.tolist(), index=temp_dataset.index.tolist())
     final_dataset["label"] = temp_dataset["label"]
-    temp_dataset = None
     final_dataset = final_dataset.replace(np.nan, 0, regex=True)
     print("final done")
     return final_dataset
@@ -101,6 +92,12 @@ def train_model(name: str):
     pickle.dump(classifier, open("splitted_text/tf_idf/model.pkl", "wb"))
 
 
+def evaluate_model(name: str):
+    classifier = pickle.load(open(name, "rb"))
+    predictions = classifier.predict(X_validation)
+    print(accuracy_score(Y_validation, predictions))
+    print(classification_report(Y_validation, predictions))
+
 def light_gbm():
     # train_data = lgb.Dataset(X_train, label=Y_train)
     lgb_train = lgb.Dataset(X_train, Y_train)
@@ -111,44 +108,50 @@ def light_gbm():
         'boosting_type': 'gbdt',
         'objective': 'binary',
         'metric': {'l2', 'auc', "binary_logloss"},
-    'num_leaves': 31,
-    'learning_rate': 0.05,
-    'feature_fraction': 0.9,
-    'bagging_fraction': 0.8,
-    'bagging_freq': 5,
-    'verbose': 0
-        }
+        'num_leaves': 31,
+        'learning_rate': 0.05,
+        'feature_fraction': 0.9,
+        'bagging_fraction': 0.8,
+        'bagging_freq': 5,
+        'verbose': 0
+    }
     bst = lgb.train(param, lgb_train, 20, valid_sets=lgb_eval)
     y_pred = bst.predict(X_validation, num_iteration=bst.best_iteration)
     for i in range(0, Y_validation.shape[0]):
-       if y_pred[i]>=.5:       # setting threshold to .5
-           y_pred[i]=1
-       else:  
-           y_pred[i]=0
+        if y_pred[i] >= .5:  # setting threshold to .5
+            y_pred[i] = 1
+        else:
+            y_pred[i] = 0
     from sklearn.metrics import confusion_matrix
     cm = confusion_matrix(Y_validation, y_pred)
     print(cm)
     from sklearn.metrics import accuracy_score
-    accuracy=accuracy_score(y_pred,Y_validation)
+    accuracy = accuracy_score(y_pred, Y_validation)
     print("LightGBM: {}".format(accuracy))
-    #print('The mean of prediction is:', y_pred.mean(), y_pred.std())
+    # print('The mean of prediction is:', y_pred.mean(), y_pred.std())
 
-for i in [1]:
-    print("Going over {}% min df".format(i))
+
+for model in ["bilstm_fasttext_mixed.h5", "lstm_w2v_custom.h5", "lstm_w2v_mixed.h5", "no_embedding_trained_bias_l1.h5"]:
+    model = model.replace(".h5", "")
+    print("Going over {} model".format(model))
     print("#######################################")
     dataset = load_data("tf_idf/features_{}.pkl".format(i))
     dataset.to_csv("tf_idf/dataframe_{}.csv".format(i))
-    #dataset = pd.read_csv("tf_idf/dataframe_{}.csv".format(i), index_col=0, encoding='utf-8')
+    dataset = pd.read_csv("{}.csv".format(model), index_col=0, encoding='utf-8')
     array = dataset.values
     domains = dataset.index.values
-    dataset=None
+    dataset = None
     X = array[:, 0:-1]
     Y = array[:, -1]
     print("array created")
     array = None
     validation_size = 0.20
     seed = 7
-    X_train, X_validation, Y_train, Y_validation, domains_train, domains_test = model_selection.train_test_split(X,Y, domains, test_size=validation_size,random_state=seed)
+    X_train, X_validation, Y_train, Y_validation, domains_train, domains_test = model_selection.train_test_split(X, Y,
+                                                                                                                 domains,
+                                                                                                                 test_size=validation_size,
+                                                                                                                 random_state=seed)
     X, Y = None, None
+    # evaluate_model("splitted_text/lda/model.pkl")
     light_gbm()
     models()
