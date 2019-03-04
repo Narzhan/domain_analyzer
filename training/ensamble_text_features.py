@@ -33,7 +33,7 @@ def load_data(file: str):
     for domain, id_list in mapper.items():
         temp_list = []
         for ids in id_list:
-            temp_list.extend(source_dataset.iloc[ids]["we"])
+            temp_list.append(source_dataset.iloc[ids]["we"])
             # temp_list.extend(feature_array[ids].toarray()[0])
             # temp_list.extend(feature_array[ids])
         domain_mapping[domain]["features"] = tuple(map(lambda x: 1 if x else 0, temp_list))
@@ -131,13 +131,12 @@ def light_gbm():
     # print('The mean of prediction is:', y_pred.mean(), y_pred.std())
 
 
-for model in ["bilstm_fasttext_mixed.h5", "lstm_w2v_custom.h5", "lstm_w2v_mixed.h5", "no_embedding_trained_bias_l1.h5"]:
-    model = model.replace(".h5", "")
+for model in ["bilstm_fasttext_mixed", "lstm_w2v_custom", "lstm_w2v_mixed", "no_embedding_trained_bias_l1"]:
     print("Going over {} model".format(model))
     print("#######################################")
-    dataset = load_data("tf_idf/features_{}.pkl".format(i))
-    dataset.to_csv("tf_idf/dataframe_{}.csv".format(i))
-    dataset = pd.read_csv("{}.csv".format(model), index_col=0, encoding='utf-8')
+    dataset = load_data("preprocessed/{}.csv".format(model))
+    dataset.to_csv("preprocessed/dataframe_{}.csv".format(model))
+    # dataset = pd.read_csv("{}.csv".format(model), index_col=0, encoding='utf-8')
     array = dataset.values
     domains = dataset.index.values
     dataset = None

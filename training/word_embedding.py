@@ -1,20 +1,22 @@
-import pandas, nltk
+import pandas
 import numpy as np
 import json
-import string
-from gensim.models import word2vec
+# import string
+# from gensim.models import word2vec
 import matplotlib.pyplot as plt
-from gensim.models import FastText
-import gensim, pickle
+# from gensim.models import FastText
+# import gensim, \
+import pickle
 from keras import Input, Model
 from keras.layers import Embedding, SpatialDropout1D, LSTM, Dense, Dropout, GRU, Bidirectional
 from keras.preprocessing.text import Tokenizer
-from numpy import asarray
+# from numpy import asarray
 from sklearn.metrics import confusion_matrix, classification_report, accuracy_score
 from sklearn.model_selection import train_test_split
 from keras.preprocessing.sequence import pad_sequences
-from nltk.stem import WordNetLemmatizer, SnowballStemmer
-nltk.download('wordnet')
+from keras.models import load_model
+# from nltk.stem import WordNetLemmatizer, SnowballStemmer
+# nltk.download('wordnet')
 
 
 dataset = pandas.read_csv("text_test_data_splitted.csv", index_col=3, encoding='utf-8', delimiter=";", engine="python")
@@ -125,41 +127,43 @@ vocab_size = len(t.word_index) + 1
 MAX_LEN = 134
 X_train_seq_trunc = pad_sequences(t.texts_to_sequences(dataset.text), maxlen=MAX_LEN)
 # X_test_seq_trunc = pad_sequences(t.texts_to_sequences(X_test), maxlen=MAX_LEN)
-X_train, X_valid, y_train, y_valid = train_test_split(X_train_seq_trunc, dataset.label, test_size=0.2,
-                                                      random_state=7, stratify=dataset.label)
+X_train, X_valid, y_train, y_valid, domains_train, domains_valid = train_test_split(X_train_seq_trunc, dataset.label,
+                                                                                    dataset.index.tolist(),
+                                                                                    test_size=0.2, random_state=7,
+                                                                                    stratify=dataset.label)
 X_train_seq_trunc = None
 dataset, t = None, None
 num_epoches = 6
 batch = 8049
-num_neurons = 100
+num_neurons = 50
 
 
 def create_rnn_lstm(method: str):
     # Add an Input Layer
-    input_layer = Input((MAX_LEN,))
-
-    # Add the word embedding Layer
-    embedding_layer = Embedding(vocab_size, feature_size, weights=[embedding_matrix], trainable=False)(
-        input_layer)
-    embedding_layer = SpatialDropout1D(0.3)(embedding_layer)
-
-    # Add the LSTM Layer
-    lstm_layer = LSTM(num_neurons)(embedding_layer)
-
-    # Add the output Layers
-    output_layer1 = Dense(50, activation="relu")(lstm_layer)
-    output_layer1 = Dropout(0.25)(output_layer1)
-    output_layer2 = Dense(1, activation="sigmoid")(output_layer1)
-
-    # Compile the model
-    model = Model(inputs=input_layer, outputs=output_layer2)
-    model.compile(optimizer="adam", loss='binary_crossentropy', metrics=['accuracy'])
-
+    # input_layer = Input((MAX_LEN,))
+    #
+    # # Add the word embedding Layer
+    # embedding_layer = Embedding(vocab_size, feature_size, weights=[embedding_matrix], trainable=False)(
+    #     input_layer)
+    # embedding_layer = SpatialDropout1D(0.3)(embedding_layer)
+    #
+    # # Add the LSTM Layer
+    # lstm_layer = LSTM(num_neurons)(embedding_layer)
+    #
+    # # Add the output Layers
+    # output_layer1 = Dense(50, activation="relu")(lstm_layer)
+    # output_layer1 = Dropout(0.25)(output_layer1)
+    # output_layer2 = Dense(1, activation="sigmoid")(output_layer1)
+    #
+    # # Compile the model
+    # model = Model(inputs=input_layer, outputs=output_layer2)
+    # model.compile(optimizer="adam", loss='binary_crossentropy', metrics=['accuracy'])
+    model = load_model("untrained/lstm_{}.h5".format(method))
     # Fitting our model
     history = model.fit(X_train, y_train, validation_data=(X_valid, y_valid), batch_size=batch, epochs=num_epoches)
     model.save("lstm_{}.h5".format(method))
     evaluate_model(model)
-    with open("train_results_{}.json".format(method), "w") as file:
+    with open("train_results_lstm_{}.json".format(method), "w") as file:
         json.dump(history.history, file)
     # eval_metric(history, "acc", "en", method, "lstm")
     # eval_metric(history, "loss", "en", method, "lstm")
@@ -169,30 +173,30 @@ def create_rnn_lstm(method: str):
 
 def create_rnn_gru(method: str):
     # Add an Input Layer
-    input_layer = Input((MAX_LEN,))
-
-    # Add the word embedding Layer
-    embedding_layer = Embedding(vocab_size, feature_size, weights=[embedding_matrix], trainable=False)(
-        input_layer)
-    embedding_layer = SpatialDropout1D(0.3)(embedding_layer)
-
-    # Add the GRU Layer
-    lstm_layer = GRU(num_neurons)(embedding_layer)
-
-    # Add the output Layers
-    output_layer1 = Dense(50, activation="relu")(lstm_layer)
-    output_layer1 = Dropout(0.25)(output_layer1)
-    output_layer2 = Dense(1, activation="sigmoid")(output_layer1)
-
-    # Compile the model
-    model = Model(inputs=input_layer, outputs=output_layer2)
-    model.compile(optimizer="adam", loss='binary_crossentropy', metrics=['accuracy'])
-
+    # input_layer = Input((MAX_LEN,))
+    #
+    # # Add the word embedding Layer
+    # embedding_layer = Embedding(vocab_size, feature_size, weights=[embedding_matrix], trainable=False)(
+    #     input_layer)
+    # embedding_layer = SpatialDropout1D(0.3)(embedding_layer)
+    #
+    # # Add the GRU Layer
+    # lstm_layer = GRU(num_neurons)(embedding_layer)
+    #
+    # # Add the output Layers
+    # output_layer1 = Dense(50, activation="relu")(lstm_layer)
+    # output_layer1 = Dropout(0.25)(output_layer1)
+    # output_layer2 = Dense(1, activation="sigmoid")(output_layer1)
+    #
+    # # Compile the model
+    # model = Model(inputs=input_layer, outputs=output_layer2)
+    # model.compile(optimizer="adam", loss='binary_crossentropy', metrics=['accuracy'])
+    model = load_model("untrained/gru_{}.h5".format(method))
     # Fitting our model
     history = model.fit(X_train, y_train, validation_data=(X_valid, y_valid), batch_size=batch, epochs=num_epoches)
     model.save("gru_{}.h5".format(method))
     evaluate_model(model)
-    with open("train_results_{}.json".format(method), "w") as file:
+    with open("train_results_gru_{}.json".format(method), "w") as file:
         json.dump(history.history, file)
     # eval_metric(history, "acc", "en", method, "gru")
     # eval_metric(history, "loss", "en", method, "gru")
@@ -202,30 +206,30 @@ def create_rnn_gru(method: str):
 
 def create_bidirectional_rnn(method: str):
     # Add an Input Layer
-    input_layer = Input((MAX_LEN,))
-
-    # Add the word embedding Layer
-    embedding_layer = Embedding(vocab_size, feature_size, weights=[embedding_matrix], trainable=False)(
-        input_layer)
-    embedding_layer = SpatialDropout1D(0.3)(embedding_layer)
-
-    # Add the LSTM Layer
-    lstm_layer = Bidirectional(GRU(num_neurons))(embedding_layer)
-
-    # Add the output Layers
-    output_layer1 = Dense(50, activation="relu")(lstm_layer)
-    output_layer1 = Dropout(0.25)(output_layer1)
-    output_layer2 = Dense(1, activation="sigmoid")(output_layer1)
-
-    # Compile the model
-    model = Model(inputs=input_layer, outputs=output_layer2)
-    model.compile(optimizer="adam", loss='binary_crossentropy', metrics=['accuracy'])
-
+    # input_layer = Input((MAX_LEN,))
+    #
+    # # Add the word embedding Layer
+    # embedding_layer = Embedding(vocab_size, feature_size, weights=[embedding_matrix], trainable=False)(
+    #     input_layer)
+    # embedding_layer = SpatialDropout1D(0.3)(embedding_layer)
+    #
+    # # Add the LSTM Layer
+    # lstm_layer = Bidirectional(GRU(num_neurons))(embedding_layer)
+    #
+    # # Add the output Layers
+    # output_layer1 = Dense(50, activation="relu")(lstm_layer)
+    # output_layer1 = Dropout(0.25)(output_layer1)
+    # output_layer2 = Dense(1, activation="sigmoid")(output_layer1)
+    #
+    # # Compile the model
+    # model = Model(inputs=input_layer, outputs=output_layer2)
+    # model.compile(optimizer="adam", loss='binary_crossentropy', metrics=['accuracy'])
+    model = load_model("untrained/bilstm_{}.h5".format(method))
     # Fitting our model
     history = model.fit(X_train, y_train, validation_data=(X_valid, y_valid), batch_size=batch, epochs=num_epoches)
     model.save("bilstm_{}.h5".format(method))
     evaluate_model(model)
-    with open("train_results_{}.json".format(method), "w") as file:
+    with open("train_results_bilstm_{}.json".format(method), "w") as file:
         json.dump(history.history, file)
     # eval_metric(history, "acc", "en", method, "bilstm")
     # eval_metric(history, "loss", "en", method, "bilstm")
@@ -235,24 +239,24 @@ def create_bidirectional_rnn(method: str):
 
 def without_embedding():
     # Add an Input Layer
-    input_layer = Input((MAX_LEN,))
-
-    # Add the word embedding Layer
-    embedding_layer = Embedding(vocab_size, feature_size)(input_layer)
-    embedding_layer = SpatialDropout1D(0.3)(embedding_layer)
-
-    # Add the LSTM Layer
-    lstm_layer = LSTM(num_neurons)(embedding_layer)
-
-    # Add the output Layers
-    output_layer1 = Dense(50, activation="relu")(lstm_layer)
-    output_layer1 = Dropout(0.25)(output_layer1)
-    output_layer2 = Dense(1, activation="sigmoid")(output_layer1)
-
-    # Compile the model
-    model = Model(inputs=input_layer, outputs=output_layer2)
-    model.compile(optimizer="adam", loss='binary_crossentropy', metrics=['accuracy'])
-
+    # input_layer = Input((MAX_LEN,))
+    #
+    # # Add the word embedding Layer
+    # embedding_layer = Embedding(vocab_size, 100)(input_layer)
+    # embedding_layer = SpatialDropout1D(0.3)(embedding_layer)
+    #
+    # # Add the LSTM Layer
+    # lstm_layer = LSTM(num_neurons)(embedding_layer)
+    # pooling = GlobalMaxPool1D()(embedding_layer)
+    # # Add the output Layers
+    # output_layer1 = Dense(50, activation="relu")(lstm_layer)
+    # output_layer1 = Dropout(0.25)(output_layer1)
+    # output_layer2 = Dense(1, activation="sigmoid")(output_layer1)
+    #
+    # # Compile the model
+    # model = Model(inputs=input_layer, outputs=output_layer2)
+    # model.compile(optimizer="adam", loss='binary_crossentropy', metrics=['accuracy'])
+    model = load_model("untrained/no_mbedding_lstm.h5")
     # Fitting our model
     history = model.fit(X_train, y_train, validation_data=(X_valid, y_valid), batch_size=batch, epochs=num_epoches)
     model.save("no_mbedding_lstm.h5")
@@ -297,27 +301,55 @@ def eval_metric(history, metric_name, lang, emb, nn):
 
 
 def evaluate_model(classifier):
-    y_pred = classifier.predict(X_valid)
+    y_pred = classifier.predict(X_valid, batch_size=2048)
     y_pred = (y_pred > 0.5)
     print(accuracy_score(y_valid, y_pred))
     print(confusion_matrix(y_valid, y_pred))
     print(classification_report(y_valid, y_pred))
 
 
-for emb_type in ["w2v_embedding_martix_mixed.npy", "fasttext_embedding_martix_custom.npy",
-                 "fasttext_embedding_martix_mixed.npy", "w2v_embedding_martix_custom.npy"]:
-    embedding_matrix = np.load(emb_type)
-    method = emb_type.replace("_embedding_martix", "").replace(".npy", "")
-    print(method)
-    print("#####################")
-    create_rnn_lstm(method)
-    create_rnn_gru(method)
-    create_bidirectional_rnn(method)
-without_embedding()
+def transform_data(model_name: str):
+    model = load_model(model_name)
+    x_train = model.predict(X_train, batch_size=1024)
+    x_train = (x_train > 0.5)
+    x_valid = model.predict(X_train, batch_size=1024)
+    x_valid = (x_valid > 0.5)
+    result_dataset = pandas.DataFrame(data=np.concatenate((x_train, x_valid), axis=0),
+                                  index=np.concatenate((domains_train, domains_valid), axis=0), columns=["we"])
+    result_dataset.to_csv("result_data.csv")
+    # result_dataset = pandas.DataFrame({"predictions": np.concatenate((x_train, x_valid), axis=0),
+    #                                    "domains": np.concatenate((domains_train, domains_valid), axis=0),
+    #                                    "labels": np.concatenate((y_train, y_valid), axis=0)}
+    #                                   )
+    # result_dataset.to_csv("{}_temp.csv".format(model_name))
+    # result_dataset = result_dataset.groupby(['domains', 'labels'])['predictions'].apply(
+    #     lambda x: ','.join(x.astype(str))).reset_index()
+    # result_dataset["predictions"] = [tuple(x.split(",")) for x in dataset["predictions"]]
+    # temp_dataset = pandas.DataFrame(dataset["predictions"].values.tolist())
+    # temp_dataset["labels"] = result_dataset["labels"]
+    # temp_dataset["domains"] = result_dataset["domains"]
+    # temp_dataset.set_index("domains", inplace=True)
+    # temp_dataset.to_csv("{}.csv".format(model_name))
+
+for model in ["bilstm_fasttext_mixed.h5", "lstm_w2v_custom.h5", "lstm_w2v_mixed.h5", "no_embedding_trained_bias_l1.h5"]:
+    model = model.replace(".h5", "")
+    transform_data(model)
+
+# for emb_type in ["w2v_embedding_martix_mixed.npy", "fasttext_embedding_martix_custom.npy",
+#                  "fasttext_embedding_martix_mixed.npy", "w2v_embedding_martix_custom.npy"]:
+#     # embedding_matrix = np.load(emb_type)
+#     method = emb_type.replace("_embedding_martix", "").replace(".npy", "")
+#     print(method)
+#     print("#####################")
+#     if method == "w2v_custom":
+#         create_rnn_lstm(method)
+#         create_rnn_gru(method)
+#     create_bidirectional_rnn(method)
+# without_embedding()
 
 # #Glove model
 # model_glove = Sequential()
-# model_glove.add(Embedding(vocabulary_size, 100, input_length=50, weights=[embedding_matrix], trainable=False))
+# model_glove.add(Embedding(vocabulary_size, feature_size, input_length=MAX_LEN, weights=[embedding_matrix], trainable=False))
 # model_glove.add(Dropout(0.2))
 # model_glove.add(Conv1D(64, 5, activation='relu'))
 # model_glove.add(MaxPooling1D(pool_size=4))
