@@ -4,7 +4,7 @@ import pickle
 from catboost import CatBoostClassifier
 from sklearn import model_selection
 from sklearn.ensemble import BaggingClassifier, RandomForestClassifier, AdaBoostClassifier, GradientBoostingClassifier
-from sklearn.model_selection import RandomizedSearchCV
+from sklearn.model_selection import RandomizedSearchCV, GridSearchCV
 from xgboost import XGBClassifier
 import lightgbm as lgb
 from sklearn.metrics import accuracy_score, classification_report
@@ -110,7 +110,38 @@ def hyper_parameters():
                                    random_state=7, n_jobs=-1, scoring="accuracy")
     rf_random.fit(X_train, Y_train)
     print(rf_random.best_params_)
+    best_random = rf_random.best_estimator_
+    random_accuracy = evaluate(best_random, X_validation, Y_validation)
 
+
+def hyper_parameters_exh():
+    param_grid = {
+        'bootstrap': [True],
+        'max_depth': [80, 90, 100, 110],
+        'max_features': [2, 3],
+        'min_samples_leaf': [3, 4, 5],
+        'min_samples_split': [8, 10, 12],
+        'n_estimators': [100, 200, 300, 1000]
+    }
+    classifier = RandomForestClassifier()
+    grid_search = GridSearchCV(estimator=classifier, param_grid=param_grid, scoring="accuracy",
+                               cv=3, n_jobs=-1, verbose=2)
+    grid_search.fit(X_train, Y_train)
+    print(grid_search.best_params_)
+    best_grid = grid_search.best_estimator_
+    grid_accuracy = evaluate(best_grid, X_validation, Y_validation)
+
+
+def evaluate(model, test_features, test_labels):
+    predictions = model.predict(test_features)
+    errors = abs(predictions - test_labels)
+    mape = 100 * np.mean(errors / test_labels)
+    accuracy = 100 - mape
+    print('Model Performance')
+    print('Average Error: {:0.4f} degrees.'.format(np.mean(errors)))
+    print('Accuracy = {:0.2f}%.'.format(accuracy))
+
+    return accuracy
 
 def evaluate_model(name: str):
     classifier = pickle.load(open(name, "rb"))
