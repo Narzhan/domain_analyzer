@@ -140,25 +140,25 @@ num_neurons = 50
 
 def create_rnn_lstm(method: str):
     # Add an Input Layer
-    # input_layer = Input((MAX_LEN,))
-    #
-    # # Add the word embedding Layer
-    # embedding_layer = Embedding(vocab_size, feature_size, weights=[embedding_matrix], trainable=False)(
-    #     input_layer)
-    # embedding_layer = SpatialDropout1D(0.3)(embedding_layer)
-    #
-    # # Add the LSTM Layer
-    # lstm_layer = LSTM(num_neurons)(embedding_layer)
-    #
-    # # Add the output Layers
-    # output_layer1 = Dense(50, activation="relu")(lstm_layer)
-    # output_layer1 = Dropout(0.25)(output_layer1)
-    # output_layer2 = Dense(1, activation="sigmoid")(output_layer1)
-    #
-    # # Compile the model
-    # model = Model(inputs=input_layer, outputs=output_layer2)
-    # model.compile(optimizer="adam", loss='binary_crossentropy', metrics=['accuracy'])
-    model = load_model("untrained/lstm_{}.h5".format(method))
+    input_layer = Input((MAX_LEN,))
+
+    # Add the word embedding Layer
+    embedding_layer = Embedding(vocab_size, feature_size, weights=[embedding_matrix], trainable=False)(
+        input_layer)
+    embedding_layer = SpatialDropout1D(0.3)(embedding_layer)
+
+    # Add the LSTM Layer
+    lstm_layer = LSTM(num_neurons)(embedding_layer)
+
+    # Add the output Layers
+    output_layer1 = Dense(50, activation="relu")(lstm_layer)
+    output_layer1 = Dropout(0.25)(output_layer1)
+    output_layer2 = Dense(1, activation="sigmoid")(output_layer1)
+
+    # Compile the model
+    model = Model(inputs=input_layer, outputs=output_layer2)
+    model.compile(optimizer="adam", loss='binary_crossentropy', metrics=['accuracy'])
+    # model = load_model("untrained/lstm_{}.h5".format(method))
     # Fitting our model
     history = model.fit(X_train, y_train, validation_data=(X_valid, y_valid), batch_size=batch, epochs=num_epoches)
     model.save("lstm_{}.h5".format(method))
@@ -173,25 +173,25 @@ def create_rnn_lstm(method: str):
 
 def create_rnn_gru(method: str):
     # Add an Input Layer
-    # input_layer = Input((MAX_LEN,))
-    #
-    # # Add the word embedding Layer
-    # embedding_layer = Embedding(vocab_size, feature_size, weights=[embedding_matrix], trainable=False)(
-    #     input_layer)
-    # embedding_layer = SpatialDropout1D(0.3)(embedding_layer)
-    #
-    # # Add the GRU Layer
-    # lstm_layer = GRU(num_neurons)(embedding_layer)
-    #
-    # # Add the output Layers
-    # output_layer1 = Dense(50, activation="relu")(lstm_layer)
-    # output_layer1 = Dropout(0.25)(output_layer1)
-    # output_layer2 = Dense(1, activation="sigmoid")(output_layer1)
-    #
-    # # Compile the model
-    # model = Model(inputs=input_layer, outputs=output_layer2)
-    # model.compile(optimizer="adam", loss='binary_crossentropy', metrics=['accuracy'])
-    model = load_model("untrained/gru_{}.h5".format(method))
+    input_layer = Input((MAX_LEN,))
+
+    # Add the word embedding Layer
+    embedding_layer = Embedding(vocab_size, feature_size, weights=[embedding_matrix], trainable=False)(
+        input_layer)
+    embedding_layer = SpatialDropout1D(0.3)(embedding_layer)
+
+    # Add the GRU Layer
+    lstm_layer = GRU(num_neurons)(embedding_layer)
+
+    # Add the output Layers
+    output_layer1 = Dense(50, activation="relu")(lstm_layer)
+    output_layer1 = Dropout(0.25)(output_layer1)
+    output_layer2 = Dense(1, activation="sigmoid")(output_layer1)
+
+    # Compile the model
+    model = Model(inputs=input_layer, outputs=output_layer2)
+    model.compile(optimizer="adam", loss='binary_crossentropy', metrics=['accuracy'])
+    # model = load_model("untrained/gru_{}.h5".format(method))
     # Fitting our model
     history = model.fit(X_train, y_train, validation_data=(X_valid, y_valid), batch_size=batch, epochs=num_epoches)
     model.save("gru_{}.h5".format(method))
@@ -206,25 +206,25 @@ def create_rnn_gru(method: str):
 
 def create_bidirectional_rnn(method: str):
     # Add an Input Layer
-    # input_layer = Input((MAX_LEN,))
-    #
-    # # Add the word embedding Layer
-    # embedding_layer = Embedding(vocab_size, feature_size, weights=[embedding_matrix], trainable=False)(
-    #     input_layer)
-    # embedding_layer = SpatialDropout1D(0.3)(embedding_layer)
-    #
-    # # Add the LSTM Layer
-    # lstm_layer = Bidirectional(GRU(num_neurons))(embedding_layer)
-    #
-    # # Add the output Layers
-    # output_layer1 = Dense(50, activation="relu")(lstm_layer)
-    # output_layer1 = Dropout(0.25)(output_layer1)
-    # output_layer2 = Dense(1, activation="sigmoid")(output_layer1)
-    #
-    # # Compile the model
-    # model = Model(inputs=input_layer, outputs=output_layer2)
-    # model.compile(optimizer="adam", loss='binary_crossentropy', metrics=['accuracy'])
-    model = load_model("untrained/bilstm_{}.h5".format(method))
+    input_layer = Input((MAX_LEN,))
+
+    # Add the word embedding Layer
+    embedding_layer = Embedding(vocab_size, feature_size, weights=[embedding_matrix], trainable=False)(
+        input_layer)
+    embedding_layer = SpatialDropout1D(0.3)(embedding_layer)
+
+    # Add the LSTM Layer
+    lstm_layer = Bidirectional(GRU(num_neurons))(embedding_layer)
+
+    # Add the output Layers
+    output_layer1 = Dense(50, activation="relu")(lstm_layer)
+    output_layer1 = Dropout(0.25)(output_layer1)
+    output_layer2 = Dense(1, activation="sigmoid")(output_layer1)
+
+    # Compile the model
+    model = Model(inputs=input_layer, outputs=output_layer2)
+    model.compile(optimizer="adam", loss='binary_crossentropy', metrics=['accuracy'])
+    # model = load_model("untrained/bilstm_{}.h5".format(method))
     # Fitting our model
     history = model.fit(X_train, y_train, validation_data=(X_valid, y_valid), batch_size=batch, epochs=num_epoches)
     model.save("bilstm_{}.h5".format(method))
@@ -239,24 +239,24 @@ def create_bidirectional_rnn(method: str):
 
 def without_embedding():
     # Add an Input Layer
-    # input_layer = Input((MAX_LEN,))
-    #
-    # # Add the word embedding Layer
-    # embedding_layer = Embedding(vocab_size, 100)(input_layer)
-    # embedding_layer = SpatialDropout1D(0.3)(embedding_layer)
-    #
-    # # Add the LSTM Layer
-    # lstm_layer = LSTM(num_neurons)(embedding_layer)
-    # pooling = GlobalMaxPool1D()(embedding_layer)
-    # # Add the output Layers
-    # output_layer1 = Dense(50, activation="relu")(lstm_layer)
-    # output_layer1 = Dropout(0.25)(output_layer1)
-    # output_layer2 = Dense(1, activation="sigmoid")(output_layer1)
-    #
-    # # Compile the model
-    # model = Model(inputs=input_layer, outputs=output_layer2)
-    # model.compile(optimizer="adam", loss='binary_crossentropy', metrics=['accuracy'])
-    model = load_model("untrained/no_mbedding_lstm.h5")
+    input_layer = Input((MAX_LEN,))
+
+    # Add the word embedding Layer
+    embedding_layer = Embedding(vocab_size, 100)(input_layer)
+    embedding_layer = SpatialDropout1D(0.3)(embedding_layer)
+
+    # Add the LSTM Layer
+    lstm_layer = LSTM(num_neurons)(embedding_layer)
+    pooling = GlobalMaxPool1D()(embedding_layer)
+    # Add the output Layers
+    output_layer1 = Dense(50, activation="relu")(lstm_layer)
+    output_layer1 = Dropout(0.25)(output_layer1)
+    output_layer2 = Dense(1, activation="sigmoid")(output_layer1)
+
+    # Compile the model
+    model = Model(inputs=input_layer, outputs=output_layer2)
+    model.compile(optimizer="adam", loss='binary_crossentropy', metrics=['accuracy'])
+    # model = load_model("untrained/no_mbedding_lstm.h5")
     # Fitting our model
     history = model.fit(X_train, y_train, validation_data=(X_valid, y_valid), batch_size=batch, epochs=num_epoches)
     model.save("no_mbedding_lstm.h5")
@@ -270,18 +270,6 @@ def without_embedding():
 
 
 def eval_metric(history, metric_name, lang, emb, nn):
-    '''
-    Function to evaluate a trained model on a chosen metric.
-    Training and validation metric are plotted in a
-    line chart for each epoch.
-
-    Parameters:
-        history : model training history
-        metric_name : loss or accuracy
-    Output:
-        line chart with epochs of x-axis and metric on
-        y-axisbatch
-    '''
     metric = history.history[metric_name]
     val_metric = history.history['val_' + metric_name]
 
