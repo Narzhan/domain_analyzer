@@ -51,6 +51,8 @@ dataset_lda = pandas.read_csv("splitted_text/lda/result_data.csv", index_col=0)
 dataset = dataset.join(dataset_lda)
 dataset_tfidf = pandas.read_csv("splitted_text/tf_idf/result_data.csv", index_col=0)
 dataset = dataset.join(dataset_tfidf)
+dataset_we = pandas.read_csv("splitted_text/word_embedding/result_data.csv", index_col=0)
+dataset = dataset.join(dataset_we)
 col_list = list(dataset)
 col_list.insert(len(col_list), col_list.pop(col_list.index('label')))
 dataset = dataset.ix[:, col_list]
@@ -116,7 +118,8 @@ scoring = 'accuracy'
 
 print("Variances: {}".format(dataset.var()))
 print("Correlations: {}".format(dataset.corr()))
-knn = KNeighborsClassifier()
+# knn = KNeighborsClassifier()
+knn = RandomForestClassifier()
 knn.fit(X_train, Y_train)
 predictions = knn.predict(X_validation)
 print(accuracy_score(Y_validation, predictions))
@@ -283,8 +286,7 @@ hyper_parameters = {
         "penalty": ["l1", "l2"],
         "intercept_scaling ": [0.1, 0.5, 1, 5, 10],
         "C": [0.5, 0.3, 0.1, 1, 0.8, 0.6, 3, 5, 10],
-        "max_iter": [100, 200, 300, 400, 500],
-        "n_jobs": -1
+        "max_iter": [100, 200, 300, 400, 500]
     },
     'LDA': {
         "solver": ["svd", "lsqr", "eigen"],
@@ -296,8 +298,7 @@ hyper_parameters = {
         "weights": ["uniform", "distance"],
         "algorithm": ["ball_tree", "kd_tree", "brute", "auto"],
         "leaf_size": [5, 10, 20, 30, 50, 60],
-        "p": [1, 2, 3, 4, 5],
-        "n_jobs": -1
+        "p": [1, 2, 3, 4, 5]
     },
     "DecTree": {
         "max_depth": [None, 8, 12, 16, 32],
@@ -318,8 +319,7 @@ hyper_parameters = {
         "max_features": [None, "sqrt", "log2"],
         "min_impurity_decrease": [0.1, 0.2, 0.3, 0.5],
         "oob_score": [False, True],
-        "class_weight": ["balanced", None, "balanced_subsample"],
-        "n_jobs": -1
+        "class_weight": ["balanced", None, "balanced_subsample"]
     },
     "Kmeans": {
         "n_clusters": [5, 8, 10, 15, 25],
@@ -327,8 +327,7 @@ hyper_parameters = {
         "n_init": [10, 15, 20, 25, 30],
         "max_iter ": [200, 300, 500, 600],
         "precompute_distances": ["auto", True, False],
-        "algorithm": ["auto", "full", "elkan"],
-        "n_jobs": -1
+        "algorithm": ["auto", "full", "elkan"]
     },
     "GBC": {
         "learning_rate ": [0.1, 0.2, 0.3, 0.5, 0.75, 1.0],
@@ -372,8 +371,7 @@ hyper_parameters = {
         'border_count': [32, 5, 10, 20, 50, 100, 200],
         'ctr_border_count': [50, 5, 10, 20, 100, 200],
         "use_best_model": True,
-        "eval_metric": "Accuracy",
-        "thread_count": -1
+        "eval_metric": "Accuracy"
     },
     "BNB": {
         "alpha": [0.01, 0.5, 1, 2, 5],
@@ -392,8 +390,7 @@ hyper_parameters = {
         "max_iter": [500, 1000, 1500, 2000, 3000],
         "tol": 1e-3,
         "early_stopping": True,
-        "class_weight": ["balanced", None],
-        "n_jobs": -1
+        "class_weight": ["balanced", None]
     },
     "passive": {
         "C": [0.5, 0.3, 0.1, 0.2, 1, 0.8, 0.6],
@@ -401,8 +398,7 @@ hyper_parameters = {
         "tol": 1e-3,
         "early_stopping": True,
         "loss": ["hinge", "squared_hinge"],
-        "class_weight": ["balanced", None],
-        "n_jobs": -1
+        "class_weight": ["balanced", None]
     },
     "QDA": {
         "tol": 1e-4,
