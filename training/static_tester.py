@@ -313,11 +313,13 @@ hyper_parameters = {
         "fit_prior": [True, False]
     },
     "RForest": {
-        "n_estimators": [100, 200, 300, 500, 800],
+        "n_estimators": [x *100 for x in range(1, 16)],
         "criterion": ["gini", "entropy"],
         "max_depth": [None, 8, 12, 16, 32],
         "max_features": [None, "sqrt", "log2"],
-        "min_impurity_decrease": [0.1, 0.2, 0.3, 0.5],
+        "min_samples_split": [2, 5, 10, 15, 20],
+        "min_samples_leaf": [1, 2, 4, 6, 8],
+        "min_impurity_decrease": [0, 0.1, 0.2, 0.3, 0.5],
         "oob_score": [False, True],
         "class_weight": ["balanced", None, "balanced_subsample"]
     },
