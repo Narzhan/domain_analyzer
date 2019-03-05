@@ -4,6 +4,7 @@ import pickle
 from catboost import CatBoostClassifier
 from sklearn import model_selection
 from sklearn.ensemble import BaggingClassifier, RandomForestClassifier, AdaBoostClassifier, GradientBoostingClassifier
+from sklearn.model_selection import RandomizedSearchCV
 from xgboost import XGBClassifier
 import lightgbm as lgb
 from sklearn.metrics import accuracy_score, classification_report
@@ -92,11 +93,31 @@ def train_model(name: str):
     pickle.dump(classifier, open("splitted_text/tf_idf/model.pkl", "wb"))
 
 
+def hyper_parameters():
+    params = {
+        "n_estimators": [x * 100 for x in range(1, 16)],
+        "criterion": ["gini", "entropy"],
+        "max_depth": [None, 8, 12, 16, 32],
+        "max_features": [None, "sqrt", "log2"],
+        "min_samples_split": [2, 5, 10, 15, 20],
+        "min_samples_leaf": [1, 2, 4, 6, 8],
+        "min_impurity_decrease": [0, 0.1, 0.2, 0.3, 0.5],
+        "oob_score": [False, True],
+        "class_weight": ["balanced", None, "balanced_subsample"]
+    }
+    classifier = RandomForestClassifier()
+    rf_random = RandomizedSearchCV(estimator=classifier, param_distributions=params, n_iter=500, cv=3, verbose=2,
+                                   random_state=7, n_jobs=-1, scoring="accuracy")
+    rf_random.fit(X_train, Y_train)
+    print(rf_random.best_params_)
+
+
 def evaluate_model(name: str):
     classifier = pickle.load(open(name, "rb"))
     predictions = classifier.predict(X_validation)
     print(accuracy_score(Y_validation, predictions))
     print(classification_report(Y_validation, predictions))
+
 
 def light_gbm():
     # train_data = lgb.Dataset(X_train, label=Y_train)
