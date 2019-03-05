@@ -111,7 +111,7 @@ def hyper_parameters():
     rf_random.fit(X_train, Y_train)
     print(rf_random.best_params_)
     best_random = rf_random.best_estimator_
-    random_accuracy = evaluate(best_random, X_validation, Y_validation)
+    random_accuracy = evaluate(best_random)
 
 
 def hyper_parameters_exh():
@@ -129,19 +129,14 @@ def hyper_parameters_exh():
     grid_search.fit(X_train, Y_train)
     print(grid_search.best_params_)
     best_grid = grid_search.best_estimator_
-    grid_accuracy = evaluate(best_grid, X_validation, Y_validation)
+    grid_accuracy = evaluate(best_grid)
 
 
-def evaluate(model, test_features, test_labels):
-    predictions = model.predict(test_features)
-    errors = abs(predictions - test_labels)
-    mape = 100 * np.mean(errors / test_labels)
-    accuracy = 100 - mape
-    print('Model Performance')
-    print('Average Error: {:0.4f} degrees.'.format(np.mean(errors)))
-    print('Accuracy = {:0.2f}%.'.format(accuracy))
+def evaluate(model):
+    predictions = model.predict(X_validation)
+    print(accuracy_score(Y_validation, predictions))
+    print(classification_report(Y_validation, predictions))
 
-    return accuracy
 
 def evaluate_model(name: str):
     classifier = pickle.load(open(name, "rb"))
