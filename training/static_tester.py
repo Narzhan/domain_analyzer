@@ -284,9 +284,6 @@ predictions = knn.predict(X_validation)
 print(accuracy_score(Y_validation, predictions))
 print(confusion_matrix(Y_validation, predictions))
 print(classification_report(Y_validation, predictions))
-# for input, prediction, label in zip(indices_test, predictions, Y_validation):
-#     if prediction != label:
-#         print("Domain {} with incorrect label: {}, should be: {}".format(input, prediction, label))
 
 # fig = plt.figure(figsize=(10.0, 8.0))
 # ax = fig.add_subplot(111)
@@ -368,7 +365,6 @@ hyper_parameters = {
         "eta0": [0.001, 0.1, 0.2, 0.4, 0.5, 0.8],
         "class_weight": ["balanced", None],
         "average": [True, 10, 100, 1000],
-        "n_jobs": -1
     },
     "XGB": {
         "eta": [0.1, 0.2, 0.3, 0.5, 0.75, 1.0],
@@ -426,10 +422,11 @@ hyper_parameters = {
         "dual": [False, True],
         "C": [0.5, 0.2, 1, 0.8, 0.6, 2, 3, 5],
         "intercept_scaling": [1, 2, 3, 5, 10],
-        "random_state": seed,
         "max_iter": [1000, 2000, 3000, 4000]
     },
     "LightGBM": {
+        'objective': 'binary',
+        'boosting_type': ['gbdt', "dart"],
         'num_leaves': sp_randint(6, 50),
         'min_child_samples': sp_randint(100, 500),
         'min_child_weight': [1e-5, 1e-3, 1e-2, 1e-1, 1, 1e1, 1e2, 1e3, 1e4],
