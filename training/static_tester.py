@@ -127,9 +127,12 @@ print(accuracy_score(Y_validation, predictions))
 print(confusion_matrix(Y_validation, predictions))
 print(classification_report(Y_validation, predictions))
 with open("fp_fn.txt", "w") as file:
+    counter = 0
     for input, prediction, label in zip(indices_test, predictions, Y_validation):
         if prediction != label:
-            file.write("Domain {} with incorrect label: {}, should be: {}\n".format(input, prediction, label))
+            file.write("Domain {} with incorrect label: {}, should be: {}, data: {}\n".format(input, prediction, label,
+                                                                                              list(X_validation[counter])))
+        counter += 1
 # rf_exp = ExtraTreesClassifier(n_estimators=50)
 # rf_exp = rf_exp.fit(X_train, Y_train)
 # importances = list(rf_exp.feature_importances_)
