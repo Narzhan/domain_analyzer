@@ -3,6 +3,8 @@ import pandas
 import time
 import numpy as np
 import os
+from scipy.stats import randint as sp_randint
+from scipy.stats import uniform as sp_uniform
 import gensim
 from scipy import  sparse
 from pandas.plotting import scatter_matrix
@@ -126,13 +128,15 @@ predictions = knn.predict(X_validation)
 print(accuracy_score(Y_validation, predictions))
 print(confusion_matrix(Y_validation, predictions))
 print(classification_report(Y_validation, predictions))
-with open("fp_fn.txt", "w") as file:
-    counter = 0
-    for input, prediction, label in zip(indices_test, predictions, Y_validation):
-        if prediction != label:
-            file.write("Domain {} with incorrect label: {}, should be: {}, data: {}\n".format(input, prediction, label,
-                                                                                              list(X_validation[counter])))
-        counter += 1
+# with open("fp_fn.txt", "w") as file:
+#     counter = 0
+#     for input, prediction, label in zip(indices_test, predictions, Y_validation):
+#         if prediction != label:
+#             file.write("Domain {} with incorrect label: {}, should be: {}, data: {}\n".format(input, prediction, label,
+#                                                                                               list(X_validation[counter])))
+#         counter += 1
+
+
 # rf_exp = ExtraTreesClassifier(n_estimators=50)
 # rf_exp = rf_exp.fit(X_train, Y_train)
 # importances = list(rf_exp.feature_importances_)
@@ -327,7 +331,7 @@ hyper_parameters = {
         "fit_prior": [True, False]
     },
     "RForest": {
-        "n_estimators": [x *100 for x in range(1, 16)],
+        "n_estimators": [x *100 for x in range(1, 11)],
         "criterion": ["gini", "entropy"],
         "max_depth": [None, 8, 12, 16, 32],
         "max_features": [None, "sqrt", "log2"],
@@ -337,18 +341,10 @@ hyper_parameters = {
         "oob_score": [False, True],
         "class_weight": ["balanced", None, "balanced_subsample"]
     },
-    "Kmeans": {
-        "n_clusters": [5, 8, 10, 15, 25],
-        "init": ["kmeans++", "random"],
-        "n_init": [10, 15, 20, 25, 30],
-        "max_iter ": [200, 300, 500, 600],
-        "precompute_distances": ["auto", True, False],
-        "algorithm": ["auto", "full", "elkan"]
-    },
     "GBC": {
         "learning_rate ": [0.1, 0.2, 0.3, 0.5, 0.75, 1.0],
         "loss": ["deviance", "exponential"],
-        "n_estimators ": [100, 200, 300, 400, 500],
+        "n_estimators ": [x *100 for x in range(1, 11)],
         "subsample": [0.2, 0.7, 1.0, 1.5, 2.0],
         "criterion": ["friedman_mse", "mse", "mae"],
         "max_depth": [3, 8, 12, 16, 32],
@@ -416,10 +412,6 @@ hyper_parameters = {
         "loss": ["hinge", "squared_hinge"],
         "class_weight": ["balanced", None]
     },
-    "QDA": {
-        "tol": 1e-4,
-        "store_covariance": True
-    },
     "SVM(linear)": {
         "penalty": ["l1", "l2"],
         "loss": ["hinge", "squared_hinge"],
@@ -428,5 +420,14 @@ hyper_parameters = {
         "intercept_scaling": [1, 2, 3, 5, 10],
         "random_state": seed,
         "max_iter": [1000, 2000, 3000, 4000]
+    },
+    "LightGBM": {
+        'num_leaves': sp_randint(6, 50),
+        'min_child_samples': sp_randint(100, 500),
+        'min_child_weight': [1e-5, 1e-3, 1e-2, 1e-1, 1, 1e1, 1e2, 1e3, 1e4],
+        'subsample': sp_uniform(loc=0.2, scale=0.8),
+        'colsample_bytree': sp_uniform(loc=0.4, scale=0.6),
+        'reg_alpha': [0, 1e-1, 1, 2, 5, 7, 10, 50, 100],
+        'reg_lambda': [0, 1e-1, 1, 5, 10, 20, 50, 100]
     }
 }
