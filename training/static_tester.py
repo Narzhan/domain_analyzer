@@ -269,6 +269,14 @@ print(cm)
 accuracy = accuracy_score(y_pred, Y_validation)
 print("LightGBM: {}".format(accuracy))
 
+# classifier = lgb.LGBMClassifier(boosting_type= 'gbdt',
+#           objective = 'binary')
+# classifier.fit(X_train, Y_train)
+# predictions = classifier.predict(X_validation)
+# cm = confusion_matrix(Y_validation, predictions)
+# print(cm)
+# accuracy = accuracy_score(predictions, Y_validation)
+# print("LightGBM: {}".format(accuracy))
 
 knn = KNeighborsClassifier()
 knn.fit(X_train, Y_train)
