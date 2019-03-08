@@ -13,7 +13,7 @@ from sklearn.neural_network import MLPClassifier
 from xgboost import XGBClassifier
 from catboost import CatBoostClassifier
 from sklearn import model_selection
-# import lightgbm as lgb
+import lightgbm as lgb
 from sklearn.metrics import mean_squared_error
 from sklearn import decomposition
 from sklearn.metrics import classification_report
@@ -61,6 +61,7 @@ print(dataset.shape)
 print(round(dataset.describe(), 2))
 print(dataset.groupby("label").size())
 del dataset["ranking_response"]
+dataset.to_csv("dataframe_enhanced.csv")
 # dataset.drop(['label'], axis=1).plot(kind='box', subplots=True, layout=(3,4), sharex=False, sharey=False)
 # plt.show()
 # dataset.drop(['label'], axis=1).hist()
@@ -119,12 +120,16 @@ scoring = 'accuracy'
 print("Variances: {}".format(dataset.var()))
 print("Correlations: {}".format(dataset.corr()))
 # knn = KNeighborsClassifier()
-knn = RandomForestClassifier()
+knn = RandomForestClassifier(n_estimators=100)
 knn.fit(X_train, Y_train)
 predictions = knn.predict(X_validation)
 print(accuracy_score(Y_validation, predictions))
 print(confusion_matrix(Y_validation, predictions))
 print(classification_report(Y_validation, predictions))
+with open("fp_fn.txt", "w") as file:
+    for input, prediction, label in zip(indices_test, predictions, Y_validation):
+        if prediction != label:
+            file.write("Domain {} with incorrect label: {}, should be: {}\n".format(input, prediction, label))
 # rf_exp = ExtraTreesClassifier(n_estimators=50)
 # rf_exp = rf_exp.fit(X_train, Y_train)
 # importances = list(rf_exp.feature_importances_)
@@ -205,13 +210,13 @@ models.append(('SVM(linear)', LinearSVC(max_iter=2000)))
 # models.append(('SVC', SVC(gamma="scale", cache_size=1000)))
 # models.append(('NuSVC', NuSVC(gamma="scale", cache_size=1000)))
 models.append(('GBC', GradientBoostingClassifier()))
-models.append(('SQD', SGDClassifier()))
+models.append(('SQD', SGDClassifier(max_iter=1000, tol=1e-3)))
 models.append(('XGB', XGBClassifier()))
 models.append(('CatBoost', CatBoostClassifier(iterations=2, learning_rate=1, depth=2, loss_function='Logloss')))
 models.append(('BNB', BernoulliNB()))
 models.append(('RC', RidgeClassifier()))
-models.append(('perc', Perceptron()))
-models.append(('passive', PassiveAggressiveClassifier()))
+models.append(('perc', Perceptron(max_iter=1000, tol=1e-3)))
+models.append(('passive', PassiveAggressiveClassifier(max_iter=1000, tol=1e-3)))
 models.append(('nearest', NearestCentroid()))
 models.append(('QDA', QuadraticDiscriminantAnalysis()))
 
@@ -231,25 +236,31 @@ for name, model in models:
         print(msg)
 print("Took: {}".format(time.time() - start_time))
 
-# # train_data = lgb.Dataset(X_train, label=Y_train)
-# lgb_train = lgb.Dataset(X_train, Y_train)
-# lgb_eval = lgb.Dataset(X_validation, Y_validation, reference=lgb_train)
-# # param = {'num_leaves': 31, 'num_trees': 50, 'objective': 'binary', 'metric': 'auc'}
-# param = {
-#     'task': 'train',
-#     'boosting_type': 'gbdt',
-#     'objective': 'binary',
-#     'metric': {'l2', 'auc'},
-#     'num_leaves': 31,
-#     'learning_rate': 0.05,
-#     'feature_fraction': 0.9,
-#     'bagging_fraction': 0.8,
-#     'bagging_freq': 5,
-#     'verbose': 0
-# }
-# bst = lgb.train(param, lgb_train, 10, valid_sets=lgb_eval)
-# y_pred = bst.predict(X_validation, num_iteration=bst.best_iteration)
-# print('The mean of prediction is:', y_pred.mean(), y_pred.std())
+lgb_train = lgb.Dataset(X_train, Y_train)
+lgb_eval = lgb.Dataset(X_validation, Y_validation, reference=lgb_train)
+param = {
+    'task': 'train',
+    'boosting_type': 'gbdt',
+    'objective': 'binary',
+    'metric': {'l2', 'auc', "binary_logloss"},
+    'num_leaves': 31,
+    'learning_rate': 0.05,
+    'feature_fraction': 0.9,
+    'bagging_fraction': 0.8,
+    'bagging_freq': 5,
+    'verbose': 0
+}
+bst = lgb.train(param, lgb_train, 20, valid_sets=lgb_eval)
+y_pred = bst.predict(X_validation, num_iteration=bst.best_iteration)
+for i in range(0, Y_validation.shape[0]):
+    if y_pred[i] >= .5:  # setting threshold to .5
+        y_pred[i] = 1
+    else:
+        y_pred[i] = 0
+cm = confusion_matrix(Y_validation, y_pred)
+print(cm)
+accuracy = accuracy_score(y_pred, Y_validation)
+print("LightGBM: {}".format(accuracy))
 
 
 knn = KNeighborsClassifier()
