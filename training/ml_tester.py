@@ -7,12 +7,13 @@ from xgboost import XGBClassifier
 from catboost import CatBoostClassifier
 from sklearn import model_selection
 from sklearn import decomposition
-from sklearn.linear_model import LogisticRegression
+from sklearn.linear_model import LogisticRegression, RidgeClassifier, Perceptron, PassiveAggressiveClassifier
 from sklearn.tree import DecisionTreeClassifier
-from sklearn.neighbors import KNeighborsClassifier
+from sklearn.neighbors import KNeighborsClassifier, NearestCentroid
 from sklearn.discriminant_analysis import LinearDiscriminantAnalysis
-from sklearn.naive_bayes import GaussianNB
+from sklearn.naive_bayes import GaussianNB, BernoulliNB
 from sklearn.naive_bayes import MultinomialNB
+import lightgbm as lgb
 from sklearn.linear_model import SGDClassifier
 from sklearn.cluster import KMeans
 from sklearn.ensemble import RandomForestClassifier, RandomForestRegressor
@@ -45,16 +46,16 @@ class MlTester:
         print("Correlations: {}".format(dataset.corr()))
 
     def prepare_data(self, filename: str):
-        return pandas.read_csv(filename, index_col=len(self.columns)-1, usecols=self.columns)
+        return pandas.read_csv(filename, index_col=0, usecols=self.columns)
 
     def load_data(self):
-        dataset = self.prepare_data("test_data.csv")
+        dataset = self.prepare_data("dataframe_enhanced.csv")
         array = dataset.values
-        X = array[:, 0:len(self.columns)-2]
-        Y = array[:, len(self.columns)-2]
+        X = array[:, 0:-1]
+        Y = array[:, -1]
         validation_size = 0.20
         X_train, X_validation, Y_train, Y_validation = model_selection.train_test_split(X, Y, test_size=validation_size,
-                                                                                        random_state=self.seed)
+                                                                                        random_state=self.seed, stratify=Y)
         return X_train, X_validation, Y_train, Y_validation, list(dataset)
 
     def feature_importance_algo(self):
@@ -113,13 +114,19 @@ class MlTester:
                 'NB': GaussianNB(),
                 'MNB': MultinomialNB(),
                 'RForest': RandomForestClassifier(n_estimators=100),
-                'Kmeans': KMeans(),
                 'Ada': AdaBoostClassifier(),
-                # 'SVM': LinearSVC(max_iter=2000),
+                'SVM': LinearSVC(max_iter=2000),
                 'GBC': GradientBoostingClassifier(),
                 'SQD': SGDClassifier(),
                 'XGB': XGBClassifier(),
-                'CatBoost': CatBoostClassifier(iterations=2, learning_rate=1, depth=2, loss_function='Logloss')}
+                'CatBoost': CatBoostClassifier(iterations=2, learning_rate=1, depth=2, loss_function='Logloss', verbose=False),
+                'BNB': BernoulliNB(),
+                'RC': RidgeClassifier(),
+                'perc': Perceptron(max_iter=1000, tol = 1e-3),
+                'passive': PassiveAggressiveClassifier(max_iter=1000, tol = 1e-3),
+                'nearest': NearestCentroid(),
+                "LightGGM": lgb.LGBMClassifier(objective="binary")
+            }
 
     def train_best_model(self):
         knn = KNeighborsClassifier()
@@ -136,6 +143,7 @@ class MlTester:
 
     def train(self):
         start_time = time.time()
+        self.scale_data()
         for name, model in self.models().items():
             try:
                 kfold = model_selection.KFold(n_splits=10, random_state=self.seed)
@@ -145,15 +153,6 @@ class MlTester:
                 self.result[name] = cv_results
             except Exception as e:
                 print(e)
-        try:
-            self.scale_data()
-            kfold = model_selection.KFold(n_splits=10, random_state=self.seed)
-            cv_results = model_selection.cross_val_score(LinearSVC(max_iter=2000), self.X_train, self.Y_train, cv=kfold,
-                                                         scoring=self.scoring)
-            print("'SVM': {} ({})".format(cv_results.mean(), cv_results.std()))
-            self.result['SVM'] = cv_results
-        except Exception as e:
-            print(e)
         print("Took: {}".format(time.time() - start_time))
         self.test_time = time.time() - start_time
 
@@ -166,13 +165,14 @@ class MlTester:
 
 
 if __name__ == '__main__':
-    columns = ["ranking_response", 'full_path', 'part_path', 'about',
-               'deep_links', 'fresh', 'infection', 'pages', 'totalEstimatedMatches', 'someResultsRemoved', 'label',
-               "domain"]
-    # for column in ['full_path', 'about', 'deep_links', 'fresh', 'infection', 'someResultsRemoved']:
-    #     columns.remove(column)
+    columns = [ 'part_path', 'deep_links', 'fresh', 'pages', 'totalEstimatedMatches', "topics", "tf-idf", "embedding", 'label', "domain"]
+    print(columns)
     tester = MlTester(columns)
-    print(tester.X_train)
-    print(tester.Y_train)
+    tester.train()
+    for column in ['part_path', 'deep_links', 'fresh', 'pages', 'totalEstimatedMatches', "topics", "tf_idf"]:
+        columns.remove(column)
+        print(columns)
+        tester = MlTester(columns)
+        tester.train()
     # tester.train_best_model()
     # tester.persist_results()
