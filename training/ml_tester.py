@@ -146,7 +146,7 @@ class MlTester:
         self.scale_data()
         for name, model in self.models().items():
             try:
-                kfold = model_selection.KFold(n_splits=10, random_state=self.seed)
+                kfold = model_selection.KFold(n_splits=5, random_state=self.seed)
                 cv_results = model_selection.cross_val_score(model, self.X_train, self.Y_train, cv=kfold,
                                                              scoring=self.scoring)
                 print("{}: {} ({})".format(name, cv_results.mean(), cv_results.std()))
