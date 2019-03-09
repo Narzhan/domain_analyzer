@@ -11,6 +11,7 @@ from pandas.plotting import scatter_matrix
 import matplotlib.pyplot as plt
 from sklearn.feature_extraction.text import TfidfVectorizer, HashingVectorizer
 from sklearn.gaussian_process import GaussianProcessClassifier
+from sklearn.model_selection import RandomizedSearchCV
 from sklearn.neural_network import MLPClassifier
 from xgboost import XGBClassifier
 from catboost import CatBoostClassifier
@@ -47,23 +48,25 @@ from sklearn.feature_selection import f_regression
 from sklearn.ensemble import BaggingClassifier
 
 # dataset = pandas.read_csv("result.csv")
-dataset = pandas.read_csv("test_data.csv", index_col=12)
-dataset = dataset.sort_index()
-dataset_lda = pandas.read_csv("splitted_text/lda/result_data.csv", index_col=0)
-dataset = dataset.join(dataset_lda)
-dataset_tfidf = pandas.read_csv("splitted_text/tf_idf/result_data.csv", index_col=0)
-dataset = dataset.join(dataset_tfidf)
-dataset_we = pandas.read_csv("splitted_text/word_embedding/result_data.csv", index_col=0)
-dataset = dataset.join(dataset_we)
-col_list = list(dataset)
-col_list.insert(len(col_list), col_list.pop(col_list.index('label')))
-dataset = dataset.ix[:, col_list]
+# dataset = pandas.read_csv("test_data.csv", index_col=12)
+# dataset = dataset.sort_index()
+# dataset_lda = pandas.read_csv("splitted_text/lda/result_data.csv", index_col=0)
+# dataset = dataset.join(dataset_lda)
+# dataset_tfidf = pandas.read_csv("splitted_text/tf_idf/result_data.csv", index_col=0)
+# dataset = dataset.join(dataset_tfidf)
+# dataset_we = pandas.read_csv("splitted_text/word_embedding/result_data.csv", index_col=0)
+# dataset = dataset.join(dataset_we)
+# col_list = list(dataset)
+# col_list.insert(len(col_list), col_list.pop(col_list.index('label')))
+# dataset = dataset.ix[:, col_list]
+
+dataset = pandas.read_csv("dataframe_enhanced.csv", index_col=0)
 
 print(dataset.shape)
 print(round(dataset.describe(), 2))
 print(dataset.groupby("label").size())
-del dataset["ranking_response"]
-dataset.to_csv("dataframe_enhanced.csv")
+# del dataset["ranking_response"]
+# dataset.to_csv("dataframe_enhanced.csv")
 # dataset.drop(['label'], axis=1).plot(kind='box', subplots=True, layout=(3,4), sharex=False, sharey=False)
 # plt.show()
 # dataset.drop(['label'], axis=1).hist()
@@ -122,12 +125,12 @@ scoring = 'accuracy'
 print("Variances: {}".format(dataset.var()))
 print("Correlations: {}".format(dataset.corr()))
 # knn = KNeighborsClassifier()
-knn = RandomForestClassifier(n_estimators=100)
-knn.fit(X_train, Y_train)
-predictions = knn.predict(X_validation)
-print(accuracy_score(Y_validation, predictions))
-print(confusion_matrix(Y_validation, predictions))
-print(classification_report(Y_validation, predictions))
+# knn = RandomForestClassifier(n_estimators=100)
+# knn.fit(X_train, Y_train)
+# predictions = knn.predict(X_validation)
+# print(accuracy_score(Y_validation, predictions))
+# print(confusion_matrix(Y_validation, predictions))
+# print(classification_report(Y_validation, predictions))
 # with open("fp_fn.txt", "w") as file:
 #     counter = 0
 #     for input, prediction, label in zip(indices_test, predictions, Y_validation):
@@ -204,86 +207,86 @@ scaling = MinMaxScaler(feature_range=(0, 1)).fit(X_train)
 X_train = scaling.transform(X_train)
 X_validation = scaling.transform(X_validation)
 
-models.append(('LR', LogisticRegression(solver='lbfgs', class_weight="balanced")))
-models.append(('LDA', LinearDiscriminantAnalysis()))
-# models.append(('KNN', KNeighborsClassifier()))
-models.append(('DecTree', DecisionTreeClassifier()))
-models.append(('NB', GaussianNB()))
-models.append(('MNB', MultinomialNB()))
-models.append(('RForest', RandomForestClassifier(n_estimators=100)))
-models.append(('Kmeans', KMeans()))
-models.append(('Ada', AdaBoostClassifier()))
-models.append(('SVM(linear)', LinearSVC(max_iter=2000)))
-# models.append(('SVC', SVC(gamma="scale", cache_size=1000)))
-# models.append(('NuSVC', NuSVC(gamma="scale", cache_size=1000)))
-models.append(('GBC', GradientBoostingClassifier()))
-models.append(('SQD', SGDClassifier(max_iter=1000, tol=1e-3)))
-models.append(('XGB', XGBClassifier()))
-models.append(('CatBoost', CatBoostClassifier(iterations=2, learning_rate=1, depth=2, loss_function='Logloss')))
-models.append(('BNB', BernoulliNB()))
-models.append(('RC', RidgeClassifier()))
-models.append(('perc', Perceptron(max_iter=1000, tol=1e-3)))
-models.append(('passive', PassiveAggressiveClassifier(max_iter=1000, tol=1e-3)))
-models.append(('nearest', NearestCentroid()))
-models.append(('QDA', QuadraticDiscriminantAnalysis()))
-
-results = []
-names = []
-start_time = time.time()
-for name, model in models:
-    try:
-        kfold = model_selection.KFold(n_splits=10, random_state=seed, shuffle=True)
-        cv_results = model_selection.cross_val_score(model, X_train, Y_train, cv=kfold, scoring=scoring)
-        results.append(cv_results)
-        names.append(name)
-        msg = "%s: %f (%f)" % (name, cv_results.mean(), cv_results.std())
-    except Exception as e:
-        print(e)
-    else:
-        print(msg)
-print("Took: {}".format(time.time() - start_time))
-
-lgb_train = lgb.Dataset(X_train, Y_train)
-lgb_eval = lgb.Dataset(X_validation, Y_validation, reference=lgb_train)
-param = {
-    'task': 'train',
-    'boosting_type': 'gbdt',
-    'objective': 'binary',
-    'metric': {'l2', 'auc', "binary_logloss"},
-    'num_leaves': 31,
-    'learning_rate': 0.05,
-    'feature_fraction': 0.9,
-    'bagging_fraction': 0.8,
-    'bagging_freq': 5,
-    'verbose': 0
-}
-bst = lgb.train(param, lgb_train, 20, valid_sets=lgb_eval)
-y_pred = bst.predict(X_validation, num_iteration=bst.best_iteration)
-for i in range(0, Y_validation.shape[0]):
-    if y_pred[i] >= .5:  # setting threshold to .5
-        y_pred[i] = 1
-    else:
-        y_pred[i] = 0
-cm = confusion_matrix(Y_validation, y_pred)
-print(cm)
-accuracy = accuracy_score(y_pred, Y_validation)
-print("LightGBM: {}".format(accuracy))
-
-# classifier = lgb.LGBMClassifier(boosting_type= 'gbdt',
-#           objective = 'binary')
-# classifier.fit(X_train, Y_train)
-# predictions = classifier.predict(X_validation)
-# cm = confusion_matrix(Y_validation, predictions)
+# models.append(('LR', LogisticRegression(solver='lbfgs', class_weight="balanced")))
+# models.append(('LDA', LinearDiscriminantAnalysis()))
+# # models.append(('KNN', KNeighborsClassifier()))
+# models.append(('DecTree', DecisionTreeClassifier()))
+# models.append(('NB', GaussianNB()))
+# models.append(('MNB', MultinomialNB()))
+# models.append(('RForest', RandomForestClassifier(n_estimators=100)))
+# models.append(('Kmeans', KMeans()))
+# models.append(('Ada', AdaBoostClassifier()))
+# models.append(('SVM(linear)', LinearSVC(max_iter=2000)))
+# # models.append(('SVC', SVC(gamma="scale", cache_size=1000)))
+# # models.append(('NuSVC', NuSVC(gamma="scale", cache_size=1000)))
+# models.append(('GBC', GradientBoostingClassifier()))
+# models.append(('SQD', SGDClassifier(max_iter=1000, tol=1e-3)))
+# models.append(('XGB', XGBClassifier()))
+# models.append(('CatBoost', CatBoostClassifier(iterations=2, learning_rate=1, depth=2, loss_function='Logloss')))
+# models.append(('BNB', BernoulliNB()))
+# models.append(('RC', RidgeClassifier()))
+# models.append(('perc', Perceptron(max_iter=1000, tol=1e-3)))
+# models.append(('passive', PassiveAggressiveClassifier(max_iter=1000, tol=1e-3)))
+# models.append(('nearest', NearestCentroid()))
+# models.append(('QDA', QuadraticDiscriminantAnalysis()))
+#
+# results = []
+# names = []
+# start_time = time.time()
+# for name, model in models:
+#     try:
+#         kfold = model_selection.KFold(n_splits=10, random_state=seed, shuffle=True)
+#         cv_results = model_selection.cross_val_score(model, X_train, Y_train, cv=kfold, scoring=scoring)
+#         results.append(cv_results)
+#         names.append(name)
+#         msg = "%s: %f (%f)" % (name, cv_results.mean(), cv_results.std())
+#     except Exception as e:
+#         print(e)
+#     else:
+#         print(msg)
+# print("Took: {}".format(time.time() - start_time))
+#
+# lgb_train = lgb.Dataset(X_train, Y_train)
+# lgb_eval = lgb.Dataset(X_validation, Y_validation, reference=lgb_train)
+# param = {
+#     'task': 'train',
+#     'boosting_type': 'gbdt',
+#     'objective': 'binary',
+#     'metric': {'l2', 'auc', "binary_logloss"},
+#     'num_leaves': 31,
+#     'learning_rate': 0.05,
+#     'feature_fraction': 0.9,
+#     'bagging_fraction': 0.8,
+#     'bagging_freq': 5,
+#     'verbose': 0
+# }
+# bst = lgb.train(param, lgb_train, 20, valid_sets=lgb_eval)
+# y_pred = bst.predict(X_validation, num_iteration=bst.best_iteration)
+# for i in range(0, Y_validation.shape[0]):
+#     if y_pred[i] >= .5:  # setting threshold to .5
+#         y_pred[i] = 1
+#     else:
+#         y_pred[i] = 0
+# cm = confusion_matrix(Y_validation, y_pred)
 # print(cm)
-# accuracy = accuracy_score(predictions, Y_validation)
+# accuracy = accuracy_score(y_pred, Y_validation)
 # print("LightGBM: {}".format(accuracy))
-
-knn = KNeighborsClassifier()
-knn.fit(X_train, Y_train)
-predictions = knn.predict(X_validation)
-print(accuracy_score(Y_validation, predictions))
-print(confusion_matrix(Y_validation, predictions))
-print(classification_report(Y_validation, predictions))
+#
+# # classifier = lgb.LGBMClassifier(boosting_type= 'gbdt',
+# #           objective = 'binary')
+# # classifier.fit(X_train, Y_train)
+# # predictions = classifier.predict(X_validation)
+# # cm = confusion_matrix(Y_validation, predictions)
+# # print(cm)
+# # accuracy = accuracy_score(predictions, Y_validation)
+# # print("LightGBM: {}".format(accuracy))
+#
+# knn = KNeighborsClassifier()
+# knn.fit(X_train, Y_train)
+# predictions = knn.predict(X_validation)
+# print(accuracy_score(Y_validation, predictions))
+# print(confusion_matrix(Y_validation, predictions))
+# print(classification_report(Y_validation, predictions))
 
 # fig = plt.figure(figsize=(10.0, 8.0))
 # ax = fig.add_subplot(111)
@@ -299,22 +302,21 @@ print(classification_report(Y_validation, predictions))
 # plt.show()
 hyper_parameters = {
     "Ada": {
-        "n_estimators ": [50, 100, 200, 300, 400, 500],
-        "algorithm ": ["SAMME", "SAMME.R"],
-        "learning_rate ": [0.2, 0.3, 0.5, 0.75, 1.0, 2, 5]
+        "n_estimators": [50, 100, 200, 300, 400, 500],
+        "algorithm": ["SAMME", "SAMME.R"],
+        "learning_rate": [0.2, 0.3, 0.5, 0.75, 1.0, 2, 5]
     },
     'LR': {
         "solver": ["newton-cg", "lbfgs", "sag", "saga"],
         "class_weight": ["balanced"],
         "penalty": ["l1", "l2"],
-        "intercept_scaling ": [0.1, 0.5, 1, 5, 10],
+        "intercept_scaling": [0.1, 0.5, 1, 5, 10],
         "C": [0.5, 0.3, 0.1, 1, 0.8, 0.6, 3, 5, 10],
         "max_iter": [100, 200, 300, 400, 500]
     },
     'LDA': {
         "solver": ["svd", "lsqr", "eigen"],
-        "shrinkage": [None, "auto", 0.1, 0.5, 1],
-        "n_components": [4, 6, 8, 12]
+        "n_components": [2, 4, 6, 8, 12, 20, 30]
     },
     "KNN": {
         "n_neighbors": [3, 5, 8, 10, 15],
@@ -347,10 +349,10 @@ hyper_parameters = {
         "class_weight": ["balanced", None, "balanced_subsample"]
     },
     "GBC": {
-        "learning_rate ": [0.1, 0.2, 0.3, 0.5, 0.75, 1.0],
+        "learning_rate": [0.1, 0.2, 0.3, 0.5, 0.75, 1.0],
         "loss": ["deviance", "exponential"],
-        "n_estimators ": [x *100 for x in range(1, 11)],
-        "subsample": [0.2, 0.7, 1.0, 1.5, 2.0],
+        "n_estimators": [x * 100 for x in range(1, 11)],
+        "subsample": [0.1, 0.2, 0.4, 0.6, 0.7, 0.8],
         "criterion": ["friedman_mse", "mse", "mae"],
         "max_depth": [3, 8, 12, 16, 32],
         "min_impurity_decrease": [0, 0.1, 0.2, 0.3],
@@ -379,15 +381,15 @@ hyper_parameters = {
         "max_bin": [256, 512, 1024]
     },
     "CatBoost": {
-        "loss_function": ["Logloss", "CrossEntropy", "LogLinQuantile", "Quantile"],
+        "loss_function": ["Logloss", "CrossEntropy", "MultiClass", "MultiClassOneVsAll"],
         'depth': [3, 1, 2, 6, 4, 5, 7, 8, 9, 10],
         'iterations': [50, 250, 100, 500, 1000],
         'learning_rate': [0.03, 0.001, 0.01, 0.1, 0.2, 0.3],
         'l2_leaf_reg': [3, 1, 5, 10, 100],
         'border_count': [32, 5, 10, 20, 50, 100, 200],
         'ctr_border_count': [50, 5, 10, 20, 100, 200],
-        "use_best_model": True,
-        "eval_metric": "Accuracy"
+        "logging_level": ["Silent"],
+        "eval_metric": ["Accuracy"]
     },
     "BNB": {
         "alpha": [0.01, 0.5, 1, 2, 5],
@@ -397,22 +399,22 @@ hyper_parameters = {
         "alpha": [0.5, 0.1, 0.4, 0.2, 1, ],
         "normalize": [True, False],
         "max_iter": [50, 250, 100, 500],
-        "class_weight": "balanced",
+        "class_weight": ["balanced"],
         "solver": ["svd", "sparse_cg", "lsqr", "sag"],
     },
     "perc": {
         "penalty": ["l1", "l2", "elasticnet"],
         "alpha": [0.5, 0.1, 0.4, 0.2, 1],
         "max_iter": [500, 1000, 1500, 2000, 3000],
-        "tol": 1e-3,
-        "early_stopping": True,
+        "tol": [1e-3],
+        "early_stopping": [True],
         "class_weight": ["balanced", None]
     },
     "passive": {
         "C": [0.5, 0.3, 0.1, 0.2, 1, 0.8, 0.6],
         "max_iter": [500, 1000, 1500, 2000, 3000],
-        "tol": 1e-3,
-        "early_stopping": True,
+        "tol": [1e-3],
+        "early_stopping": [True],
         "loss": ["hinge", "squared_hinge"],
         "class_weight": ["balanced", None]
     },
@@ -425,7 +427,7 @@ hyper_parameters = {
         "max_iter": [1000, 2000, 3000, 4000]
     },
     "LightGBM": {
-        'objective': 'binary',
+        'objective': ['binary'],
         'boosting_type': ['gbdt', "dart"],
         'num_leaves': sp_randint(6, 50),
         'min_child_samples': sp_randint(100, 500),
@@ -436,3 +438,24 @@ hyper_parameters = {
         'reg_lambda': [0, 1e-1, 1, 5, 10, 20, 50, 100]
     }
 }
+
+classifiers = {
+    'LR': LogisticRegression(), 'KNN': KNeighborsClassifier(), 'SQD': SGDClassifier(),
+    'LightGBM': lgb.LGBMClassifier(), 'passive': PassiveAggressiveClassifier(), 'RC': RidgeClassifier(),
+    'LDA': LinearDiscriminantAnalysis(), 'perc': Perceptron(), 'MNB': MultinomialNB(),
+    'CatBoost': CatBoostClassifier(), 'SVM(linear)': LinearSVC(), 'XGB': XGBClassifier(),
+    'DecTree': DecisionTreeClassifier(), 'RForest': RandomForestClassifier(), 'BNB': BernoulliNB(),
+    'GBC': GradientBoostingClassifier(), 'Ada': AdaBoostClassifier()}
+
+for name, classifier in classifiers.items():
+    print(name)
+    print("###############")
+    rf_random = RandomizedSearchCV(estimator=classifier, param_distributions=hyper_parameters[name], n_iter=100, cv=2,
+                                   verbose=0, error_score=0.0,
+                                   random_state=7, n_jobs=-1, scoring="accuracy")
+    rf_random.fit(X_train, Y_train)
+    print(rf_random.best_params_)
+    best_random = rf_random.best_estimator_
+    predictions = best_random.predict(X_validation)
+    print(accuracy_score(Y_validation, predictions))
+    print(classification_report(Y_validation, predictions))
