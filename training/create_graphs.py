@@ -8,7 +8,7 @@ import matplotlib.mlab as mlab
 import csv, ast, operator
 from statistics import mean, stdev
 
-dataset = pandas.read_csv("test_data.csv")
+dataset = pandas.read_csv("dataframe_enhanced.csv", index_col=0)
 
 
 def heat_map():
@@ -19,31 +19,33 @@ def heat_map():
                 xticklabels=corr.columns.values,
                 yticklabels=corr.columns.values, vmax=1, square=True,annot=True,cmap='cubehelix')
     #plt.yticks(rotation=30) 
-    plt.xticks(rotation=40) 
+    plt.xticks(rotation=40)
     plt.show()
+
 
 def histos():
     for cat in list(dataset):
-        if cat in ["totalEstimatedMatches"]:
-
+        if cat not in ["topics", "tf_idf", "embedding",
+               'label', "domain"]:
             x1 = list(dataset[dataset['label'] == 1][cat])
             x2 = list(dataset[dataset['label'] == 0][cat])
             colors = ["red", 'blue']
             names = ["škodlivé", "čisté"]
             fig = plt.figure(figsize=(5.5, 4.0))
             plt.hist([x1, x2], color=colors, edgecolor="black", label=names, stacked=True
-                    )
+                     )
             plt.title(cat)
             plt.legend()
             plt.xlabel("Hodnota")
             plt.ylabel("Počet výsktů")
-            # plt.savefig("hist_{}.png".format(cat))
-            # plt.gcf().clear()
-            plt.show()
+            plt.savefig("hists/hist_{}.png".format(cat))
+            plt.gcf().clear()
+            # plt.show()
 
 
 def total_est_mtach_hist():
     cat = "totalEstimatedMatches"
+    print(cat)
     x1 = list(dataset[dataset['label'] == 1][cat])
     x2 = list(dataset[dataset['label'] == 0][cat])
     colors = ["red", 'blue']
@@ -66,7 +68,7 @@ def total_est_mtach_hist():
     plt.legend()
     plt.xlabel("Hodnota")
     plt.ylabel("Počet výsktů")
-    plt.savefig("hist_{}.png".format(cat))
+    plt.savefig("hists/hist_{}.png".format(cat))
     plt.gcf().clear()
     # plt.show()
 
@@ -191,4 +193,4 @@ def plot_coherence():
     plt.show()
 
 
-plot_coherence()
+total_est_mtach_hist()
