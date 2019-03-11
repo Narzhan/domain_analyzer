@@ -2,7 +2,7 @@ import pandas
 import time
 
 from sklearn.metrics import accuracy_score, confusion_matrix, classification_report
-from sklearn.preprocessing import MinMaxScaler
+from sklearn.preprocessing import MinMaxScaler, StandardScaler, RobustScaler, QuantileTransformer, PowerTransformer, Normalizer
 from xgboost import XGBClassifier
 from catboost import CatBoostClassifier
 from sklearn import model_selection
@@ -109,7 +109,7 @@ class MlTester:
     def models(self):
         return {'LR': LogisticRegression(solver='lbfgs', class_weight="balanced"),
                 'LDA': LinearDiscriminantAnalysis(),
-                'KNN': KNeighborsClassifier(),
+                # 'KNN': KNeighborsClassifier(),
                 'DecTree': DecisionTreeClassifier(),
                 'NB': GaussianNB(),
                 'MNB': MultinomialNB(),
@@ -117,16 +117,17 @@ class MlTester:
                 'Ada': AdaBoostClassifier(),
                 'SVM': LinearSVC(max_iter=2000),
                 'GBC': GradientBoostingClassifier(),
-                'SQD': SGDClassifier(),
+                'SQD': SGDClassifier(max_iter=1000, tol=1e-3),
                 'XGB': XGBClassifier(),
-                'CatBoost': CatBoostClassifier(iterations=2, learning_rate=1, depth=2, loss_function='Logloss', verbose=False),
+                'CatBoost': CatBoostClassifier(iterations=2, learning_rate=1, depth=2, loss_function='Logloss',
+                                               verbose=False),
                 'BNB': BernoulliNB(),
                 'RC': RidgeClassifier(),
-                'perc': Perceptron(max_iter=1000, tol = 1e-3),
-                'passive': PassiveAggressiveClassifier(max_iter=1000, tol = 1e-3),
+                'perc': Perceptron(max_iter=1000, tol=1e-3),
+                'passive': PassiveAggressiveClassifier(max_iter=1000, tol=1e-3),
                 'nearest': NearestCentroid(),
-                "LightGGM": lgb.LGBMClassifier(objective="binary")
-            }
+                "LightGGM": lgb.LGBMClassifier(objective="binary", verbose=0)
+                }
 
     def train_best_model(self):
         knn = KNeighborsClassifier()
@@ -136,14 +137,40 @@ class MlTester:
         print(confusion_matrix(self.Y_validation, predictions))
         print(classification_report(self.Y_validation, predictions))
 
-    def scale_data(self):
-        scaling = MinMaxScaler(feature_range=(-1, 1)).fit(self.X_train)
+    def scale_data_minmax(self):
+        scaling = MinMaxScaler(feature_range=(0, 1)).fit(self.X_train)
         self.X_train = scaling.transform(self.X_train)
         self.X_validation = scaling.transform(self.X_validation)
 
+    def scale_data_standartize(self):
+        # zero mean, unit variance
+        scaler = StandardScaler().fit(self.X_train)
+        self.X_train = scaler.transform(self.X_train)
+        self.X_validation = scaler.transform(self.X_validation)
+
+    def scale_data_robust(self):
+        scaler = RobustScaler().fit(self.X_train)
+        self.X_train = scaler.transform(self.X_train)
+        self.X_validation = scaler.transform(self.X_validation)
+
+    def scale_data_quantile(self):
+        scaler = QuantileTransformer().fit(self.X_train)
+        self.X_train = scaler.transform(self.X_train)
+        self.X_validation = scaler.transform(self.X_validation)
+
+    def scale_data_power(self):
+        scaler = PowerTransformer().fit(self.X_train)
+        self.X_train = scaler.transform(self.X_train)
+        self.X_validation = scaler.transform(self.X_validation)
+
+    def scale_data_normalization(self):
+        normalizer = Normalizer().fit(self.X_train)
+        self.X_train = normalizer.transform(self.X_train)
+        self.X_validation = normalizer.transform(self.X_validation)
+
     def train(self):
         start_time = time.time()
-        self.scale_data()
+        self.scale_data_standartize()
         for name, model in self.models().items():
             try:
                 kfold = model_selection.KFold(n_splits=5, random_state=self.seed)
@@ -165,14 +192,15 @@ class MlTester:
 
 
 if __name__ == '__main__':
-    columns = [ 'part_path', 'deep_links', 'fresh', 'pages', 'totalEstimatedMatches', "topics", "tf-idf", "embedding", 'label', "domain"]
-    print(columns)
+    columns = ['part_path', 'deep_links', 'fresh', 'pages', 'totalEstimatedMatches', "topics", "tf_idf", "embedding",
+               'label', "domain"]
+    # print(columns)
     tester = MlTester(columns)
     tester.train()
-    for column in ['part_path', 'deep_links', 'fresh', 'pages', 'totalEstimatedMatches', "topics", "tf_idf"]:
-        columns.remove(column)
-        print(columns)
-        tester = MlTester(columns)
-        tester.train()
+    # for column in ['part_path', 'deep_links', 'fresh', 'pages', 'totalEstimatedMatches', "topics", "tf_idf"]:
+    #     # columns.remove(column)
+    #     # print(columns)
+    #     tester = MlTester(columns)
+    #     tester.train()
     # tester.train_best_model()
     # tester.persist_results()
