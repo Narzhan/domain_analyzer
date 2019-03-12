@@ -609,38 +609,43 @@ grid_classifiers = {
     'Ada': AdaBoostClassifier(), 'KNN': KNeighborsClassifier(), 'GBC': GradientBoostingClassifier()}
 
 
-# for name, classifier in grid_classifiers.items():
-#     print(name)
-#     print("###############")
-#     # rf_random = RandomizedSearchCV(estimator=classifier, param_distributions=grid_hyper_parameters[name], n_iter=100, cv=2,
-#     #                                verbose=2, error_score=0.0,
-#     #                                random_state=7, n_jobs=-1, scoring="accuracy")
-#     rf_random = GridSearchCV(estimator=classifier, param_grid=grid_hyper_parameters[name], cv=2,
-#                              verbose=2, error_score=0.0, n_jobs=3, scoring="accuracy")
-#     rf_random.fit(X_train, Y_train)
-#     print(rf_random.best_params_)
-#     best_random = rf_random.best_estimator_
-#     predictions = best_random.predict(X_validation)
-#     print(accuracy_score(Y_validation, predictions))
-#     print(classification_report(Y_validation, predictions))
+for name, classifier in grid_classifiers.items():
+    print(name)
+    print("###############")
+    # rf_random = RandomizedSearchCV(estimator=classifier, param_distributions=grid_hyper_parameters[name], n_iter=100, cv=2,
+    #                                verbose=2, error_score=0.0,
+    #                                random_state=7, n_jobs=-1, scoring="accuracy")
+    rf_random = GridSearchCV(estimator=classifier, param_grid=grid_hyper_parameters[name], cv=2,
+                             verbose=2, error_score=0.0, n_jobs=-1, scoring="accuracy")
+    rf_random.fit(X_train, Y_train)
+    print(rf_random.best_params_)
+    best_random = rf_random.best_estimator_
+    predictions = best_random.predict(X_validation)
+    print(accuracy_score(Y_validation, predictions))
+    print(classification_report(Y_validation, predictions))
+    with open("{}.txt".format(name), "a") as file:
+        file.write(str(accuracy_score(Y_validation, predictions)))
+        file.write(str(confusion_matrix(Y_validation, predictions)))
+        file.write(classification_report(Y_validation, predictions))
 
-results = []
-configs= []
-import random
-for _ in range(100):
-    parameters = {}
-    for parameter, values in grid_hyper_parameters["GBC"].items():
-        parameters[parameter] = random.choice(values)
-    try:
-        kfold = model_selection.KFold(n_splits=2, random_state=seed, shuffle=True)
-        cv_results = model_selection.cross_val_score(GradientBoostingClassifier(**parameters), X_train, Y_train, cv=kfold, scoring=scoring)
-        results.append(cv_results.mean())
-        configs.append(parameters)
-        msg = "%s: %f (%f)" % (parameters, cv_results.mean(), cv_results.std())
-    except Exception as e:
-        print(e)
-    else:
-        print(msg)
-index = results.index(max(results))
-print(configs[index])
-print("Best parameters: {}".format(configs[index]))
+
+# results = []
+# configs= []
+# import random
+# for _ in range(100):
+#     parameters = {}
+#     for parameter, values in grid_hyper_parameters["GBC"].items():
+#         parameters[parameter] = random.choice(values)
+#     try:
+#         kfold = model_selection.KFold(n_splits=2, random_state=seed, shuffle=True)
+#         cv_results = model_selection.cross_val_score(GradientBoostingClassifier(**parameters), X_train, Y_train, cv=kfold, scoring=scoring)
+#         results.append(cv_results.mean())
+#         configs.append(parameters)
+#         msg = "%s: %f (%f)" % (parameters, cv_results.mean(), cv_results.std())
+#     except Exception as e:
+#         print(e)
+#     else:
+#         print(msg)
+# index = results.index(max(results))
+# print(configs[index])
+# print("Best parameters: {}".format(configs[index]))
