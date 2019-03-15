@@ -284,18 +284,19 @@ X_validation = scaling.transform(X_validation)
 
 # lgb_train = lgb.Dataset(X_train, Y_train)
 # lgb_eval = lgb.Dataset(X_validation, Y_validation, reference=lgb_train)
-# param = {
-#     'task': 'train',
-#     'boosting_type': 'gbdt',
-#     'objective': 'binary',
-#     'metric': {'l2', 'auc', "binary_logloss"},
-#     'num_leaves': 31,
-#     'learning_rate': 0.05,
-#     'feature_fraction': 0.9,
-#     'bagging_fraction': 0.8,
-#     'bagging_freq': 5,
-#     'verbose': 0
-# }
+# # param = {
+# #     'task': 'train',
+# #     'boosting_type': 'gbdt',
+# #     'objective': 'binary',
+# #     'metric': {'l2', 'auc', "binary_logloss"},
+# #     'num_leaves': 31,
+# #     'learning_rate': 0.05,
+# #     'feature_fraction': 0.9,
+# #     'bagging_fraction': 0.8,
+# #     'bagging_freq': 5,
+# #     'verbose': 0
+# # }
+# param = {"boosting_type": "gbdt", "colsample_bytree": 1, "min_child_samples": 300, "min_child_weight": 0.001, "num_leaves": 40, "objective": "binary", "reg_alpha": 2, "reg_lambda": 0.5, "subsample": 0.5, "verbose": 0}
 # bst = lgb.train(param, lgb_train, 20, valid_sets=lgb_eval)
 # y_pred = bst.predict(X_validation, num_iteration=bst.best_iteration)
 # for i in range(0, Y_validation.shape[0]):
@@ -307,15 +308,45 @@ X_validation = scaling.transform(X_validation)
 # print(cm)
 # accuracy = accuracy_score(y_pred, Y_validation)
 # print("LightGBM: {}".format(accuracy))
-# # classifier = lgb.LGBMClassifier(boosting_type= 'gbdt',
-# #           objective = 'binary')
-# # classifier.fit(X_train, Y_train)
-# # predictions = classifier.predict(X_validation)
-# # cm = confusion_matrix(Y_validation, predictions)
-# # print(cm)
-# # accuracy = accuracy_score(predictions, Y_validation)
-# # print("LightGBM: {}".format(accuracy))
-#
+param = {"boosting_type": "gbdt", "colsample_bytree": 1, "min_child_samples": 300, "min_child_weight": 0.001,
+         "num_leaves": 40, "objective": "binary", "reg_alpha": 2, "reg_lambda": 0.5, "subsample": 0.5, "verbose": 0}
+classifier = lgb.LGBMClassifier(**param)
+classifier.fit(X_train, Y_train)
+pickle.dump(classifier, open("splitted_text/lightgbm.pkl", "wb"))
+with open("mistakes/fp_fn_lightgbm.txt", "w") as file:
+    counter = 0
+    for input, prediction, label in zip(indices_test, predictions, Y_validation):
+        if prediction != label:
+            file.write("Domain {} with incorrect label: {}, should be: {}, data: {}\n".format(input, prediction, label,
+                                                                                              list(X_validation[
+                                                                                                       counter])))
+        counter += 1
+param = {"C": 0.2, "dual": False, "intercept_scaling": 2, "loss": "squared_hinge", "max_iter": 2500, "penalty": "l2"}
+knn = LinearSVC(**param)
+knn.fit(X_train, Y_train)
+pickle.dump(classifier, open("splitted_text/linearsvc.pkl", "wb"))
+with open("mistakes/fp_fn_svc.txt", "w") as file:
+    counter = 0
+    for input, prediction, label in zip(indices_test, predictions, Y_validation):
+        if prediction != label:
+            file.write("Domain {} with incorrect label: {}, should be: {}, data: {}\n".format(input, prediction, label,
+                                                                                              list(X_validation[
+                                                                                                       counter])))
+        counter += 1
+param = {"class_weight": None, "criterion": "entropy", "max_depth": 9, "max_features": None, "min_impurity_decrease": 0,
+         "min_samples_leaf": 4, "min_samples_split": 13, "n_estimators": 700, "oob_score": False}
+knn = RandomForestClassifier(**param)
+knn.fit(X_train, Y_train)
+pickle.dump(classifier, open("splitted_text/rforest.pkl", "wb"))
+with open("mistakes/fp_fn_rforrest.txt", "w") as file:
+    counter = 0
+    for input, prediction, label in zip(indices_test, predictions, Y_validation):
+        if prediction != label:
+            file.write("Domain {} with incorrect label: {}, should be: {}, data: {}\n".format(input, prediction, label,
+                                                                                              list(X_validation[
+                                                                                                       counter])))
+        counter += 1
+
 # knn = KNeighborsClassifier()
 # knn.fit(X_train, Y_train)
 # predictions = knn.predict(X_validation)
@@ -518,45 +549,45 @@ grid_hyper_parameters = {
     },
     "GBC": {
         "learning_rate": [0.1, 0.2, 0.3],
-        "loss": ["deviance", "exponential"],
-        "n_estimators": [100,200,300],
-        "subsample": [0.1, 0.2, 0.4, 0.6, 0.7, 0.8],
+        "loss": ["deviance"],
+        "n_estimators": [200, 300],
+        "subsample": [0.7, 0.8],
         "criterion": ["friedman_mse", "mse"],
-        "max_depth": [12, 16, 32],
-        "min_samples_split": [0.1, 0.2, 0.3],
-        "min_samples_leaf": [0.1, 0.2, 0.3],
-        "min_impurity_decrease": [0, 0.1, 0.2],
+        "max_depth": [16, 32],
+        "min_samples_split": [0.2, 0.3],
+        "min_samples_leaf": [0.2, 0.3],
+        "min_impurity_decrease": [0, 0.1],
         "max_features": ["sqrt", "log2"]
     },
     "SQD": {
-        "loss": ["hinge", "squared_hinge", "perceptron"],
+        "loss": ["hinge", "perceptron"],
         "penalty": ["l2"],
-        "alpha": [0.3, 0.4, 0.5],
-        "max_iter": [2000, 3000, 3500],
+        "alpha": [0.4, 0.5],
+        "max_iter": [2000, 3000],
         "learning_rate": ["optimal", "invscaling"],
-        "eta0": [0.1, 0.2, 0.3],
+        "eta0": [0.1, 0.2],
         "class_weight": [None],
-        "average": [8, 10, 15],
+        "average": [10, 15],
     },
     "XGB": {
-        "eta": [0.8, 1.0, 1.5],
-        "gamma": [0.7, 0.8, 1],
-        "max_depth": [5, 6, 8],
-        "subsample": [0.5, 0.75, 0.85],
+        "eta": [0.8, 1.0],
+        "gamma": [0.8, 1],
+        "max_depth": [6, 8],
+        "subsample": [0.75, 0.85],
         "tree_method": ["auto", "exact"],
         "updater": ["grow_histmaker,sync"],
         "process_type": ["default"],
         "grow_policy": ["lossguide"],
-        "num_parallel_tree": [2, 3, 4],
-        "max_bin": [1024, 1568]
+        "num_parallel_tree": [3, 4],
+        "max_bin": [1024]
     },
     "CatBoost": {
-        "loss_function": ["MultiClass", "MultiClassOneVsAll"],
-        'depth': [9, 10, 12, 15, 20],
-        'iterations': [400, 500, 600],
-        'learning_rate': [0.1, 0.2, 0.3],
-        'l2_leaf_reg': [90, 100, 130],
-        'border_count': [150, 200, 250, 300],
+        "loss_function": ["MultiClass"],
+        'depth': [9, 10, 12],
+        'iterations': [500, 600],
+        'learning_rate': [0.2, 0.3],
+        'l2_leaf_reg': [100, 130],
+        'border_count': [150, 200, 250],
         'ctr_border_count': [5, 6, 8],
         "eval_metric": ["Accuracy"],
         "verbose": [False]
@@ -581,10 +612,10 @@ grid_hyper_parameters = {
         'objective': ['binary'],
         'boosting_type': ['gbdt'],
         'num_leaves': [40, 50, 60],
-        'min_child_samples': [300, 350, 400, 500],
+        'min_child_samples': [300, 350, 400],
         'min_child_weight': [1e-3, 1e-2, 1e-1],
-        'subsample': [0.5, 0.6, 0.7, 0.9],
-        'colsample_bytree': [0.5, 0.8, 1],
+        'subsample': [0.5, 0.6, 0.7],
+        'colsample_bytree': [0.8, 1],
         'reg_alpha': [1, 2, 5],
         'reg_lambda': [0, 1e-1, 0.5],
         "verbose": [0]
@@ -601,32 +632,36 @@ grid_hyper_parameters = {
 # # 'GBC': GradientBoostingClassifier(), 'Ada': AdaBoostClassifier()
 # }
 
-grid_classifiers = {
-    'LR': LogisticRegression(), 'SQD': SGDClassifier(),
-    'LightGBM': lgb.LGBMClassifier(), 'passive': PassiveAggressiveClassifier(),
-    'CatBoost': CatBoostClassifier(), 'SVM(linear)': LinearSVC(), 'XGB': XGBClassifier(),
-    'DecTree': DecisionTreeClassifier(), 'RForest': RandomForestClassifier(),
-    'Ada': AdaBoostClassifier(), 'KNN': KNeighborsClassifier(), 'GBC': GradientBoostingClassifier()}
-
-
-for name, classifier in grid_classifiers.items():
-    print(name)
-    print("###############")
-    # rf_random = RandomizedSearchCV(estimator=classifier, param_distributions=grid_hyper_parameters[name], n_iter=100, cv=2,
-    #                                verbose=2, error_score=0.0,
-    #                                random_state=7, n_jobs=-1, scoring="accuracy")
-    rf_random = GridSearchCV(estimator=classifier, param_grid=grid_hyper_parameters[name], cv=2,
-                             verbose=2, error_score=0.0, n_jobs=-1, scoring="accuracy")
-    rf_random.fit(X_train, Y_train)
-    print(rf_random.best_params_)
-    best_random = rf_random.best_estimator_
-    predictions = best_random.predict(X_validation)
-    print(accuracy_score(Y_validation, predictions))
-    print(classification_report(Y_validation, predictions))
-    with open("{}.txt".format(name), "a") as file:
-        file.write(str(accuracy_score(Y_validation, predictions)))
-        file.write(str(confusion_matrix(Y_validation, predictions)))
-        file.write(classification_report(Y_validation, predictions))
+# grid_classifiers = {
+#     'LR': LogisticRegression(), 'DecTree': DecisionTreeClassifier(), 'RForest': RandomForestClassifier(),
+#     'Ada': AdaBoostClassifier(), 'LightGBM': lgb.LGBMClassifier(), 'CatBoost': CatBoostClassifier(),
+#     'SVM(linear)': LinearSVC()
+#     # 'SQD': SGDClassifier(),
+#     # 'passive': PassiveAggressiveClassifier(),
+#     # 'XGB': XGBClassifier(),
+#     # 'KNN': KNeighborsClassifier(), 'GBC': GradientBoostingClassifier()
+# }
+#
+#
+# for name, classifier in grid_classifiers.items():
+#     print(name)
+#     print("###############")
+#     # rf_random = RandomizedSearchCV(estimator=classifier, param_distributions=grid_hyper_parameters[name], n_iter=100, cv=2,
+#     #                                verbose=2, error_score=0.0,
+#     #                                random_state=7, n_jobs=-1, scoring="accuracy")
+#     rf_random = GridSearchCV(estimator=classifier, param_grid=grid_hyper_parameters[name], cv=2,
+#                              verbose=2, error_score=0.0, n_jobs=-1, scoring="accuracy")
+#     rf_random.fit(X_train, Y_train)
+#     print(rf_random.best_params_)
+#     best_random = rf_random.best_estimator_
+#     predictions = best_random.predict(X_validation)
+#     print(accuracy_score(Y_validation, predictions))
+#     print(classification_report(Y_validation, predictions))
+#     with open("{}.txt".format(name), "a") as file:
+#         file.write(rf_random.best_params_)
+#         file.write(str(accuracy_score(Y_validation, predictions)))
+#         file.write(str(confusion_matrix(Y_validation, predictions)))
+#         file.write(classification_report(Y_validation, predictions))
 
 
 # results = []
