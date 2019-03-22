@@ -107,26 +107,27 @@ class MlTester:
         print("ICA: {}".format(x_reduced.shape))
 
     def models(self):
-        return {'LR': LogisticRegression(solver='lbfgs', class_weight="balanced"),
-                'LDA': LinearDiscriminantAnalysis(),
-                # 'KNN': KNeighborsClassifier(),
-                'DecTree': DecisionTreeClassifier(),
-                'NB': GaussianNB(),
-                'MNB': MultinomialNB(),
-                'RForest': RandomForestClassifier(n_estimators=100),
-                'Ada': AdaBoostClassifier(),
-                'SVM': LinearSVC(max_iter=2000),
-                'GBC': GradientBoostingClassifier(),
-                'SQD': SGDClassifier(max_iter=1000, tol=1e-3),
-                'XGB': XGBClassifier(),
-                'CatBoost': CatBoostClassifier(iterations=2, learning_rate=1, depth=2, loss_function='Logloss',
-                                               verbose=False),
-                'BNB': BernoulliNB(),
-                'RC': RidgeClassifier(),
-                'perc': Perceptron(max_iter=1000, tol=1e-3),
-                'passive': PassiveAggressiveClassifier(max_iter=1000, tol=1e-3),
-                'nearest': NearestCentroid(),
-                "LightGGM": lgb.LGBMClassifier(objective="binary", verbose=0)
+        return {
+                # 'LR': LogisticRegression(solver='lbfgs', class_weight="balanced"),
+                # 'LDA': LinearDiscriminantAnalysis(),
+                'KNN': KNeighborsClassifier(),
+                # 'DecTree': DecisionTreeClassifier(),
+                # 'NB': GaussianNB(),
+                # 'MNB': MultinomialNB(),
+                # 'RForest': RandomForestClassifier(n_estimators=100),
+                # 'Ada': AdaBoostClassifier(),
+                # 'SVM': LinearSVC(max_iter=2000),
+                # 'GBC': GradientBoostingClassifier(),
+                # 'SQD': SGDClassifier(max_iter=1000, tol=1e-3),
+                # 'XGB': XGBClassifier(),
+                # 'CatBoost': CatBoostClassifier(iterations=2, learning_rate=1, depth=2, loss_function='Logloss',
+                #                                verbose=False),
+                # 'BNB': BernoulliNB(),
+                # 'RC': RidgeClassifier(),
+                # 'perc': Perceptron(max_iter=1000, tol=1e-3),
+                # 'passive': PassiveAggressiveClassifier(max_iter=1000, tol=1e-3),
+                # 'nearest': NearestCentroid(),
+                # "LightGGM": lgb.LGBMClassifier(objective="binary", verbose=0)
                 }
 
     def train_best_model(self):
@@ -153,6 +154,7 @@ class MlTester:
         self.X_train = scaler.transform(self.X_train)
         self.X_validation = scaler.transform(self.X_validation)
 
+
     def scale_data_quantile(self):
         scaler = QuantileTransformer().fit(self.X_train)
         self.X_train = scaler.transform(self.X_train)
@@ -170,7 +172,7 @@ class MlTester:
 
     def train(self):
         start_time = time.time()
-        self.scale_data_standartize()
+        self.scale_data_minmax()
         for name, model in self.models().items():
             try:
                 kfold = model_selection.KFold(n_splits=5, random_state=self.seed)
@@ -194,13 +196,13 @@ class MlTester:
 if __name__ == '__main__':
     columns = ['part_path', 'deep_links', 'fresh', 'pages', 'totalEstimatedMatches', "topics", "tf_idf", "embedding",
                'label', "domain"]
-    # print(columns)
+    print(columns)
     tester = MlTester(columns)
     tester.train()
-    # for column in ['part_path', 'deep_links', 'fresh', 'pages', 'totalEstimatedMatches', "topics", "tf_idf"]:
-    #     # columns.remove(column)
-    #     # print(columns)
-    #     tester = MlTester(columns)
-    #     tester.train()
+    for column in ['part_path', 'deep_links', 'fresh', 'pages', 'totalEstimatedMatches', "topics", "tf_idf"]:
+        columns.remove(column)
+        print(columns)
+        tester = MlTester(columns)
+        tester.train()
     # tester.train_best_model()
     # tester.persist_results()

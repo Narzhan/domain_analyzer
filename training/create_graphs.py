@@ -9,7 +9,7 @@ import csv, ast, operator
 from statistics import mean, stdev
 
 dataset = pandas.read_csv("dataframe_enhanced.csv", index_col=0)
-
+# sns.pairplot(dataset, hue='label')
 
 def heat_map():
     # dataset = dataset.drop('label', 1)
@@ -193,4 +193,4 @@ def plot_coherence():
     plt.show()
 
 
-total_est_mtach_hist()
+# total_est_mtach_hist()

@@ -89,25 +89,112 @@ import numpy as np
 import matplotlib.pyplot as plt
 import pandas, pickle
 
-test_dataset = pandas.read_csv("text_test_data_splitted.csv", index_col=2, encoding='utf-8', delimiter=";", engine="python")
-test_dataset = test_dataset.replace(np.nan, '', regex=True)
-test_dataset = test_dataset.sort_index()
-tfidf = TfidfVectorizer(min_df=0.2, analyzer='word', stop_words="english", ngram_range=(1, 2))
-features = tfidf.fit_transform(test_dataset.text)
-pickle.dump(features, open("features_array_splitted.pkl", "wb"))
+# test_dataset = pandas.read_csv("text_test_data_splitted.csv", index_col=2, encoding='utf-8', delimiter=";", engine="python")
+# test_dataset = test_dataset.replace(np.nan, '', regex=True)
+# test_dataset = test_dataset.sort_index()
+# tfidf = TfidfVectorizer(min_df=0.2, analyzer='word', stop_words="english", ngram_range=(1, 2))
+# features = tfidf.fit_transform(test_dataset.text)
+# pickle.dump(features, open("features_array_splitted.pkl", "wb"))
+#
+#
+# # k means determine k
+# distortions = []
+# K = range(5,20)
+# for k in K:
+#     kmeanModel = KMeans(n_clusters=k).fit(features)
+#     kmeanModel.fit(features)
+#     distortions.append(sum(np.min(cdist(features, kmeanModel.cluster_centers_, 'euclidean'), axis=1)) / features.shape[0])
+#
+# # Plot the elbow
+# plt.plot(K, distortions, 'bx-')
+# plt.xlabel('k')
+# plt.ylabel('Distortion')
+# plt.title('Hledání optimální hondoty počtu shluků k')
+# # plt.show()
+# from numpy import asarray
+# embeddings_index = {}
+# with open('pretrained/wiki.en.vec', "r", encoding="utf-8") as file:
+#     next(file)
+#     for line in file:
+#         values = line.split()
+#         # if len(values) > 301:
+#         #     values.pop(1)
+#         #     print("popped")
+#         word = values[0]
+#         coefs = asarray(values[len(values)-300:], dtype='float32')
+#         embeddings_index[word] = coefs
+# # f = open('pretrained/wiki.cs.vec', encoding="utf-8")
+# for line in f:
+#     values = line.split()
+#     word = values[0]
+#     coefs = asarray(values[1:], dtype='float32')
+#     embeddings_index[word] = coefs
+# f.close()
+incorrect_domins = ["usa.cc", "turkhackteam.org", "nut.cc", "ferozo.com", "criticbay.com", "servicemarket.su",
+                    "quanmama.com", "byethost13.com", "beget.tech", "forumattivo.it", "newtonpaiva.br", "cpvdo.com",
+                    "hpsd.k12.pa.us", "eldivisadero.cl", "seriesgato.tv", "roamans.com", "paisabazaar.com",
+                    "okhatrimaza.org", "paypal-customerfeedback.com", "saldao-mes-das-criancas.com", "lomo.jp",
+                    "dresk.ru", "umbler.net", "userproplugin.com", "seriesgato.com", "tvoe-zoloto.com", "unaux.com",
+                    "perfectliker.com", "statichtmlapp.com", "wefbee.com", "crkphotoimaging.com.au", "hatenablog.com",
+                    "aasaanjobs.com", "copymethat.com", "jigsy.com", "celitel2.com", "4gram.com",
+                    "epochtimeschicago.com", "xsph.ru", "creditonebank.com", "tc-clicks.com", "jeun.fr",
+                    "byethost8.com", "flazio.com", "tripod.com", "doctr1ne.com", "ulcraft.com", "live.com",
+                    "likesgroup.com", "filmshared.com", "19tv.top", "naijaextra.com", "capitalcu.com", "cewomen.com",
+                    "pfashionmart.com", "webhostbox.net", "7m.pl", "begambleaware.org", "dunya.com.pk",
+                    "exploreourapps.com", "uol.com.br", "surveygizmo.com", "fbsub.de", "byethost32.com", "zz.am",
+                    "nacosti.go.ke", "ultimatefreehost.in", "idgod.ph", "dotapicker.com", "cuasotinhyeu.vn",
+                    "yamadadenkishop.com", "adexten.com", "byethost12.com", "igg.biz", "zzz.com.ua",
+                    "playstationmail.net", "linkbax.com", "watchcric.eu", "traktrafficflow.com", "tumblr.com",
+                    "my-free.website", "clickconfirmation.com", "2090000.ru", "e-monsite.com", "telegra.ph",
+                    "emailaccessonline.com", "vipfb.es", "officialliker.co", "comuesp.com", "byethost7.com",
+                    "hostland.pro", "webxion.com", "myartsonline.com", "toexten.com", "icloudbaypass.com", "ukit.me",
+                    "2go.com.ph", "cabanova.com", "strikingly.com", "yola.com", "pe.hu", "cla.fr", "somee.com", "es.tl",
+                    "dreamscape317.net", "html-5.me"]
+remove = {'barnygeeft.byethost6.com', 'byethost9.com', 'byethost.com'}
+# dataset_lda = pandas.read_csv("splitted_text/lda/result_data.csv", index_col=0)
+# dataset_tfidf = pandas.read_csv("splitted_text/tf_idf/result_data.csv", index_col=0)
 
 
-# k means determine k
-distortions = []
-K = range(5,20)
-for k in K:
-    kmeanModel = KMeans(n_clusters=k).fit(features)
-    kmeanModel.fit(features)
-    distortions.append(sum(np.min(cdist(features, kmeanModel.cluster_centers_, 'euclidean'), axis=1)) / features.shape[0])
+# domain_mapping = {}
+# numeric_dataset = pandas.read_csv("test_data.csv", index_col=12)
+# for domain in incorrect_domins:
+#     domain_mapping[domain] = numeric_dataset.loc[domain]["label"]
+# import csv
+# temp = set()
+# with open("text_test_data_splitted.csv", "r", encoding="utf-8") as file:
+#     with open("text_test_data_splitted_fixed.csv", "w", encoding="utf-8") as outfile:
+#         reader = csv.reader(file, delimiter=";")
+#         # outfile.write("{}\n".format(";".join(next(reader))))
+#         for row in reader:
+#             if row[3] in domain_mapping and int(row[2]) != domain_mapping[row[3]]:
+#                 temp.add(row[3])
+#             else:
+#                 outfile.write("{}\n".format(";".join(row)))
+#
+# if len(temp) != len(incorrect_domins):
+#     print(temp)
+from keras import Input, Model
+from keras.layers import Embedding, SpatialDropout1D, LSTM, Dense, Dropout, GRU, Bidirectional, GlobalMaxPool1D
 
-# Plot the elbow
-plt.plot(K, distortions, 'bx-')
-plt.xlabel('k')
-plt.ylabel('Distortion')
-plt.title('Hledání optimální hondoty počtu shluků k')
-plt.show()
+t = pickle.load(open("splitted_text/word_embedding/tokenizer.pkl", "rb"))
+vocab_size = len(t.word_index) + 1
+t=None
+MAX_LEN = 134
+input_layer = Input((MAX_LEN,))
+
+# Add the word embedding Layer
+embedding_layer = Embedding(vocab_size, 100)(input_layer)
+embedding_layer = SpatialDropout1D(0.4)(embedding_layer)
+
+# Add the LSTM Layer
+lstm_layer = LSTM(25)(embedding_layer)
+pooling = GlobalMaxPool1D()(embedding_layer)
+# Add the output Layers
+output_layer1 = Dense(50, activation="relu")(lstm_layer)
+output_layer1 = Dropout(0.4)(output_layer1)
+output_layer2 = Dense(1, activation="sigmoid")(output_layer1)
+
+# Compile the model
+model = Model(inputs=input_layer, outputs=output_layer2)
+model.compile(optimizer="adam", loss='binary_crossentropy', metrics=['accuracy'])
+model.save("no_embedding.h5")

@@ -14,9 +14,9 @@ def load_data(file: str):
     dataset = pd.read_csv("text_test_data_splitted.csv", index_col=3, encoding='utf-8', delimiter=";", engine="python")
     dataset = dataset.replace(np.nan, '', regex=True)
     dataset = dataset.sort_index()
-    source_dataset = pd.read_csv(file, index_col=0, encoding='utf-8')
-    source_dataset = source_dataset.sort_index()
-    # feature_array = pickle.load(open(file, "rb"))
+    # source_dataset = pd.read_csv(file, index_col=0, encoding='utf-8')
+    # source_dataset = source_dataset.sort_index()
+    feature_array = pickle.load(open(file, "rb"))
     # feature_array = np.load(file)
     mapper = {}
     domain_mapping = {}
@@ -34,11 +34,11 @@ def load_data(file: str):
     for domain, id_list in mapper.items():
         temp_list = []
         for ids in id_list:
-            temp_list.append(source_dataset.iloc[ids]["we"])
-            # temp_list.extend(feature_array[ids].toarray()[0])
+            # temp_list.append(source_dataset.iloc[ids]["we"])
+            temp_list.extend(feature_array[ids].toarray()[0])
             # temp_list.extend(feature_array[ids])
-        domain_mapping[domain]["features"] = tuple(map(lambda x: 1 if x else 0, temp_list))
-        # domain_mapping[domain]["features"] = tuple(temp_list)
+        # domain_mapping[domain]["features"] = tuple(map(lambda x: 1 if x else 0, temp_list))
+        domain_mapping[domain]["features"] = tuple(temp_list)
     print("features done")
     feature_array, mapper = None, None
     # pickle.dump(domain_mapping, open("domain_mapping.pkl", "wb"))
@@ -178,7 +178,8 @@ def light_gbm():
     # print('The mean of prediction is:', y_pred.mean(), y_pred.std())
 
 
-for model in ["bilstm_fasttext_mixed", "lstm_w2v_custom", "lstm_w2v_mixed", "no_embedding_trained_bias_l1"]:
+# for model in ["bilstm_fasttext_mixed", "lstm_w2v_custom", "lstm_w2v_mixed", "no_embedding_trained_bias_l1"]:
+for model in [1]:
     print("Going over {} model".format(model))
     print("#######################################")
     dataset = load_data("preprocessed/{}.csv".format(model))
