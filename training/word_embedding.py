@@ -136,6 +136,7 @@ dataset, t = None, None
 num_epoches = 6
 batch = 8049
 num_neurons = 50
+store_training = False
 
 
 def create_rnn_lstm(method: str):
@@ -161,7 +162,7 @@ def create_rnn_lstm(method: str):
     # model = load_model("untrained/lstm_{}.h5".format(method))
     # Fitting our model
     history = model.fit(X_train, y_train, validation_data=(X_valid, y_valid), batch_size=batch, epochs=num_epoches)
-    model.save("lstm_{}.h5".format(method))
+    model.save("lstm_{}.h5".format(method), include_optimizer=store_training=store_training)
     evaluate_model(model)
     with open("train_results_lstm_{}.json".format(method), "w") as file:
         json.dump(history.history, file)
@@ -194,7 +195,7 @@ def create_rnn_gru(method: str):
     # model = load_model("untrained/gru_{}.h5".format(method))
     # Fitting our model
     history = model.fit(X_train, y_train, validation_data=(X_valid, y_valid), batch_size=batch, epochs=num_epoches)
-    model.save("gru_{}.h5".format(method))
+    model.save("gru_{}.h5".format(method), include_optimizer=store_training)
     evaluate_model(model)
     with open("train_results_gru_{}.json".format(method), "w") as file:
         json.dump(history.history, file)
@@ -227,7 +228,7 @@ def create_bidirectional_rnn(method: str):
     # model = load_model("untrained/bilstm_{}.h5".format(method))
     # Fitting our model
     history = model.fit(X_train, y_train, validation_data=(X_valid, y_valid), batch_size=batch, epochs=num_epoches)
-    model.save("bilstm_{}.h5".format(method))
+    model.save("bilstm_{}.h5".format(method), include_optimizer=store_training)
     evaluate_model(model)
     with open("train_results_bilstm_{}.json".format(method), "w") as file:
         json.dump(history.history, file)
@@ -259,7 +260,7 @@ def without_embedding():
     # model = load_model("untrained/no_mbedding_lstm.h5")
     # Fitting our model
     history = model.fit(X_train, y_train, validation_data=(X_valid, y_valid), batch_size=batch, epochs=num_epoches)
-    model.save("no_mbedding_lstm.h5")
+    model.save("no_mbedding_lstm.h5", include_optimizer=store_training)
     evaluate_model(model)
     with open("train_results_no_embedding.json", "w") as file:
         json.dump(history.history, file)

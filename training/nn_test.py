@@ -1,24 +1,13 @@
-import numpy as np # linear algebra
 import pandas as pd
-import time, pickle
+import time
+
 import matplotlib.pyplot as plt
-from keras.optimizers import SGD
-from scipy import sparse
-from sklearn.feature_extraction.text import TfidfVectorizer
-from sklearn.model_selection import train_test_split
-from sklearn.preprocessing import StandardScaler
-from keras.models import Sequential, load_model
-from keras.layers import Dense, Embedding, SpatialDropout1D, GlobalMaxPool1D, LSTM, GRU, Bidirectional, \
-    BatchNormalization, Conv2D
-from sklearn.metrics import confusion_matrix, accuracy_score, classification_report
+import pandas as pd
+from keras.layers import Dense, Embedding, SpatialDropout1D, GlobalMaxPool1D, LSTM
 from keras.layers import Dropout
-from keras.layers import Flatten
-from keras.layers.convolutional import Convolution1D
-from keras.layers.convolutional import MaxPooling2D
-from sklearn.preprocessing import LabelEncoder,OneHotEncoder
-from keras import backend as K
-
-
+from keras.models import Sequential
+from sklearn.metrics import confusion_matrix, accuracy_score, classification_report
+from sklearn.model_selection import train_test_split
 # dataset= pd.read_csv("result.csv")
 from tensorflow.python.keras import Input, Model
 
@@ -69,7 +58,7 @@ def baseline_nn():
     # classifier = load_model("test.h5")
     # Fitting our model
     history = classifier.fit(X_train, y_train, validation_data=(X_test, y_test), batch_size=64, epochs=5)
-    classifier.save("splitted_text/dense_model.h5")
+    classifier.save("dense_model.h5", include_optimizer=False)
     evaluate_model(classifier)
     score, acc = classifier.evaluate(X_test, y_test, batch_size=32)
     print(score, acc)
