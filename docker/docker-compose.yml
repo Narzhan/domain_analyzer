@@ -1,0 +1,46 @@
+version: '2'
+services:
+  api:
+    image: narzhan/domain-analyzer:1.0
+    stdin_open: true
+    logging:
+      driver: json-file
+      options:
+        max-size: "20m"
+        max-file: "1"
+    network_mode: host
+    environment:
+      CELERY_BROKER: "redis://localhost:6379/3"
+      MODE: "api"
+      REDIS_RESULTS: "localhost"
+      REDIS_ANALYSIS: "localhost"
+      REDIS_DB: "2"
+      REDIS_DB_ANALYSIS: "4"
+    tty: true
+  oraculum:
+    image: narzhan/domain-analyzer:1.0
+    environment:
+        CELERY_BROKER: "redis://localhost:6379/3"
+        MODE: "domain_analyzer"
+        REDIS_RESULTS: "localhost"
+        REDIS_ANALYSIS: "localhost"
+        REDIS_DB: "2"
+        REDIS_DB_ANALYSIS: "4"
+        RECORD_TTL: "680400"
+        BING_API_KEY: "d7d12eb8f46644ba9e6ba49360900593"
+        PERSIST_DATA: "true"
+        KERAS_BACKEND: "theano"
+    stdin_open: true
+    network_mode: host
+    logging:
+      driver: json-file
+      options:
+        max-size: "20m"
+        max-file: "1"
+    tty: true
+    volumes:
+      - /opt/domain_analyzer/logs/:/opt/domain_analyzer/logs/
+      - /opt/domain_analyzer/data/:/opt/domain_analyzer/data/
+  redis:
+    image: redis:5.0
+    network_mode: host
