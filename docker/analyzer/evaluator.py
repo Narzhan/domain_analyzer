@@ -2,9 +2,6 @@ import os
 import pickle
 from .tools import build_logger
 
-if os.environ["MODE"] == "domain_analyzer":
-    pass
-
 
 class Evaluator:
     def __init__(self, data: list, domain: str, scaler, dense_model

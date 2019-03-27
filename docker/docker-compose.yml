@@ -30,6 +30,7 @@ services:
         BING_API_KEY: "d7d12eb8f46644ba9e6ba49360900593"
         PERSIST_DATA: "true"
         KERAS_BACKEND: "theano"
+        TEST_MODE: "true"
     stdin_open: true
     network_mode: host
     logging:
