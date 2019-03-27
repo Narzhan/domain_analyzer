@@ -1,5 +1,6 @@
 import json
 import os
+import re
 
 import falcon
 import redis
@@ -16,6 +17,7 @@ class Predict:
         self.analysis_connection = redis.Redis(os.environ["REDIS_ANALYSIS"], port=6379,
                                                db=os.environ["REDIS_DB_ANALYSIS"])
         self.logger = build_logger("api", "/opt/domain_analyzer/logs/")
+        self.pattern = re.compile("(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z0-9][a-z0-9-]{0,61}[a-z0-9]")
 
     def fetch_result(self, domain: str) -> dict:
         try:
@@ -32,6 +34,9 @@ class Predict:
         except Exception as e:
             self.logger.warning("Failed to get analysis status, {}".format(e))
             return False
+
+    def validate_input(self, domain: str) -> bool:
+        return True if self.pattern.match(domain) else False
 
     def analysis_created(self, domain: str):
         try:
@@ -62,14 +67,18 @@ class Predict:
             resp.status = falcon.HTTP_400
             resp.media = {"error": "incorrect json format, {}".format(de)}
         else:
-            try:
-                status, response_code = self.handle_request(analysis)
-            except Exception as e:
-                resp.status = falcon.HTTP_500
-                resp.media = {"status": "Failed to create domain processing job", "reason": "{}".format(e)}
+            if self.validate_input(analysis["domain"]):
+                try:
+                    status, response_code = self.handle_request(analysis)
+                except Exception as e:
+                    resp.status = falcon.HTTP_500
+                    resp.media = {"status": "Failed to create domain processing job", "reason": "{}".format(e)}
+                else:
+                    resp.status = response_code
+                    resp.media = status
             else:
-                resp.status = response_code
-                resp.media = status
+                resp.status = falcon.HTTP_400
+                resp.media = {"error": "Only valid domain names are supported"}
 
 
 class Healthcheck(object):
