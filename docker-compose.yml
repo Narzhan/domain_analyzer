@@ -17,7 +17,7 @@ services:
       REDIS_DB: "2"
       REDIS_DB_ANALYSIS: "4"
     tty: true
-  oraculum:
+  domain_analyzer:
     image: narzhan/domain-analyzer:1.0
     environment:
         CELERY_BROKER: "redis://localhost:6379/3"
@@ -27,7 +27,7 @@ services:
         REDIS_DB: "2"
         REDIS_DB_ANALYSIS: "4"
         RECORD_TTL: "680400"
-        BING_API_KEY: "d7d12eb8f46644ba9e6ba49360900593"
+        BING_API_KEY: ""
         PERSIST_DATA: "true"
         KERAS_BACKEND: "theano"
         TEST_MODE: "true"
