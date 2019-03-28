@@ -14,7 +14,7 @@ Behaviour
 =========
 The user interacts with the system via REST API. Example of the request mich be something like this:
 
-curl -X POST http://localhost:8000/predict -d '{"domain": "google.com"}'
+`curl -X POST http://localhost:8000/predict -d '{"domain": "google.com"}'`
 
 The communication with the api is described in [Swagger](https://app.swaggerhub.com/apis/Narzhan/Oraculum/1.0.0)  
 
