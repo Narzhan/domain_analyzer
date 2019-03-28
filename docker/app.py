@@ -17,7 +17,7 @@ class Predict:
         self.analysis_connection = redis.Redis(os.environ["REDIS_ANALYSIS"], port=6379,
                                                db=os.environ["REDIS_DB_ANALYSIS"])
         self.logger = build_logger("api", "/opt/domain_analyzer/logs/")
-        self.pattern = re.compile("(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z0-9][a-z0-9-]{0,61}[a-z0-9]")
+        self.domain_pattern = re.compile("(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z0-9][a-z0-9-]{0,61}[a-z]")
 
     def fetch_result(self, domain: str) -> dict:
         try:
@@ -36,7 +36,7 @@ class Predict:
             return False
 
     def validate_input(self, domain: str) -> bool:
-        return True if self.pattern.match(domain) else False
+        return True if self.domain_pattern.match(domain) else False
 
     def analysis_created(self, domain: str):
         try:

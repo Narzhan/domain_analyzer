@@ -46,9 +46,9 @@ class DomainAnalyzer(Task):
         self.we_model = load_model("{}we_model.h5".format(base_path))
         self.scaler = pickle.load(open("{}scaler.pkl".format(base_path), "rb"))
         self.dense_model = load_model("{}dense_model.h5".format(base_path))
-        # self.knn = pickle.load(open("{}knn.pkl".format(base_path), "rb"))
-        # self.linearsvc = pickle.load(open("{}linearsvc.pkl".format(base_path), "rb"))
-        # self.rforest = pickle.load(open("{}rforest.pkl".format(base_path), "rb"))
+        self.knn = pickle.load(open("{}knn.pkl".format(base_path), "rb"))
+        self.linearsvc = pickle.load(open("{}linearsvc.pkl".format(base_path), "rb"))
+        self.rforest = pickle.load(open("{}rforest.pkl".format(base_path), "rb"))
         # self.lightgbm = pickle.load(open("{}lightgbm.pkl".format(base_path), "rb"))
 
     def create_date(self):
@@ -81,9 +81,8 @@ class DomainAnalyzer(Task):
             if len(enrichers) > 0:
                 for enricher in enrichers:
                     domain_data[0].append(enricher.enrich(domain))
-            evaluator = Evaluator(domain_data, domain, self.scaler, self.dense_model
-                                  # self.knn, self.linearsvc, self.rforest, self.lightgbm
-            )
+            evaluator = Evaluator(domain_data, domain, self.scaler, self.dense_model, self.knn, self.linearsvc,
+                                  self.rforest)
             result = evaluator.predict_label()
             if result:
                 self.persist_result(domain, result)
@@ -92,7 +91,7 @@ class DomainAnalyzer(Task):
             else:
                 self.update_state(
                     state=states.FAILURE,
-                    meta="Failed to get evaluation}"
+                    meta="Failed to get evaluation"
                 )
         except FetchException:
             if self.request.retries < 6:
