@@ -3,13 +3,14 @@
 import json
 # import multiprocessing
 import os
-from datetime import datetime
-
-import redis
+# from datetime import datetime
+#
+# import redis
 from analyzer.evaluator import Evaluator
 from analyzer.exc import FetchException, PreprocessException
 from analyzer.preprocessor import Preprocessor
 from analyzer.tools import build_logger
+from analyzer.cache import CacheConnector
 from celery import Celery, states
 from celery import Task
 
@@ -25,8 +26,9 @@ class DomainAnalyzer(Task):
 
     def __init__(self):
         self.logger = build_logger("main_worker", "/opt/domain_analyzer/logs/")
-        self.connection = redis.Redis(os.environ["REDIS_RESULTS"], port=6379, db=os.environ["REDIS_DB"])
-        self.result_connection = redis.Redis(os.environ["REDIS_ANALYSIS"], port=6379, db=os.environ["REDIS_DB_ANALYSIS"])
+        self.cache = CacheConnector()
+        # self.connection = redis.Redis(os.environ["REDIS_RESULTS"], port=6379, db=os.environ["REDIS_DB"])
+        # self.result_connection = redis.Redis(os.environ["REDIS_ANALYSIS"], port=6379, db=os.environ["REDIS_DB_ANALYSIS"])
         if os.environ["MODE"] == "domain_analyzer":
             self.load_models()
 
@@ -51,26 +53,26 @@ class DomainAnalyzer(Task):
         self.rforest = pickle.load(open("{}rforest.pkl".format(base_path), "rb"))
         # self.lightgbm = pickle.load(open("{}lightgbm.pkl".format(base_path), "rb"))
 
-    def create_date(self):
-        try:
-            return datetime.now().strftime("%Y-%m-%dT%H:%M:%SZ")
-        except Exception:
-            return "unknown"
-
-    def persist_result(self, domain, result: list):
-        try:
-            self.connection.set(domain,
-                                json.dumps(
-                                    {"prediction": result[0], "probability": result[1], "created": self.create_date()}),
-                                int(os.environ["RECORD_TTL"]))
-        except Exception as e:
-            self.logger.warning("Failed to persist results to Redis, {}".format(e))
-
-    def analysis_done(self, domain: str):
-        try:
-            self.result_connection.delete(domain)
-        except Exception as e:
-            self.logger.warning("Failed to free domain from processing queue, {}".format(e))
+    # def create_date(self):
+    #     try:
+    #         return datetime.now().strftime("%Y-%m-%dT%H:%M:%SZ")
+    #     except Exception:
+    #         return "unknown"
+    #
+    # def persist_result(self, domain, result: list):
+    #     try:
+    #         self.connection.set(domain,
+    #                             json.dumps(
+    #                                 {"prediction": result[0], "probability": result[1], "created": self.create_date()}),
+    #                             int(os.environ["RECORD_TTL"]))
+    #     except Exception as e:
+    #         self.logger.warning("Failed to persist results to Redis, {}".format(e))
+    #
+    # def analysis_done(self, domain: str):
+    #     try:
+    #         self.result_connection.delete(domain)
+    #     except Exception as e:
+    #         self.logger.warning("Failed to free domain from processing queue, {}".format(e))
 
     def run(self, domain):
         enrichers = []
@@ -85,14 +87,11 @@ class DomainAnalyzer(Task):
                                   self.rforest)
             result = evaluator.predict_label()
             if result:
-                self.persist_result(domain, result)
-                self.analysis_done(domain)
+                self.cache.push_result(domain, result)
+                self.cache.finish_analysis(domain)
                 return result
             else:
-                self.update_state(
-                    state=states.FAILURE,
-                    meta="Failed to get evaluation"
-                )
+                raise Exception
         except FetchException:
             if self.request.retries < 6:
                 self.retry(args=(domain))
