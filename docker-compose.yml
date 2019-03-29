@@ -1,7 +1,7 @@
 version: '2'
 services:
   api:
-    image: narzhan/domain-analyzer:1.0
+    image: narzhan/domain-analyzer:1.1
     stdin_open: true
     logging:
       driver: json-file
@@ -12,20 +12,20 @@ services:
     environment:
       CELERY_BROKER: "redis://localhost:6379/3"
       MODE: "api"
-      REDIS_RESULTS: "localhost"
-      REDIS_ANALYSIS: "localhost"
-      REDIS_DB: "2"
-      REDIS_DB_ANALYSIS: "4"
+      CACHE_RESULTS: "localhost"
+      CACHE_ANALYSIS: "localhost"
+      RESULTS_DB: "2"
+      ANALYSIS_DB: "4"
     tty: true
   domain_analyzer:
-    image: narzhan/domain-analyzer:1.0
+    image: narzhan/domain-analyzer:1.1
     environment:
         CELERY_BROKER: "redis://localhost:6379/3"
         MODE: "domain_analyzer"
-        REDIS_RESULTS: "localhost"
-        REDIS_ANALYSIS: "localhost"
-        REDIS_DB: "2"
-        REDIS_DB_ANALYSIS: "4"
+        CACHE_RESULTS: "localhost"
+        CACHE_ANALYSIS: "localhost"
+        RESULTS_DB: "2"
+        ANALYSIS_DB: "4"
         RECORD_TTL: "680400"
         BING_API_KEY: ""
         PERSIST_DATA: "true"
