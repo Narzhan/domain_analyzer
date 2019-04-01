@@ -52,7 +52,7 @@ class Preprocessor:
             if response.ok:
                 data = response.json()
                 if "_type" in data and data["_type"] == "SearchResponse":
-                    if "PERSIST_DATA" in os.environ:
+                    if "PERSIST_DATA" in os.environ and os.environ["PERSIST_DATA"] == "true":
                         self.persist_data(data)
                     return data
                 else:
@@ -161,14 +161,17 @@ class Preprocessor:
         return [part_path, fresh, pages, matches], texts
 
     def prepare_data(self) -> list:
-        raw_data = self.fetch_data() if "TEST_MODE" not in os.environ else self.dry_run()
+        if "TEST_MODE" in os.environ and os.environ["TEST_MODE"] == "true":
+            raw_data = self.dry_run()
+        else:
+            raw_data = self.fetch_data()
         if "webPages" in raw_data:
             processed_metadata, texts = self.process_metadata(raw_data["webPages"])
         else:
             processed_metadata, texts = [0, 0, 0, 0], []
         processed_text = self.process_text(texts)
         processed_metadata.extend(processed_text)
-        # self.result_logger.info("{} - {}".format(self.domain, processed_metadata))
+        self.result_logger.info("{} - {}".format(self.domain, processed_metadata))
         return [processed_metadata]
 
 # model.predict([[7, 6, 8, 234000000, 0.0, 0.0, 0.0]])

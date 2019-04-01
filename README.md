@@ -24,23 +24,23 @@ Envs
 #### Domain_analyzer 
 - CELERY_BROKER: address of Redis broker ('redis://localhost:6379/3')
 - MODE: service name for startup script
-- CACHE_RESULTS: address of a redis result cache
-- CACHE_ANALYSIS: address of a redis analysis status cache
-- RESULTS_DB: redis result db
-- ANALYSIS_DB: redis analysis status db
+- CACHE_RESULTS: address of a result cache
+- CACHE_ANALYSIS: address of a analysis status cache
+- RESULTS_DB: result db while using Redis
+- ANALYSIS_DB: analysis status db  while using Redis
 - RECORD_TTL: ttl of the analysis record
 - BING_API_KEY: api key for bing [Conginitve api](https://azure.microsoft.com/en-us/services/cognitive-services/)
-- PERSIST_DATA: the option to persist the data for future use (retraining) default path is **/opt/domain_analyzer/data/**, if not desired the env should not be supplied
-- KERAS_BACKEND: specify backend for Keras, currently Theano because of  concurrency issue
-- TEST_MODE: the option whether to not download data from Bing, if not desired the env should not be supplied
+- PERSIST_DATA: the option to persist the data for future use (retraining) default path is **/opt/domain_analyzer/data/**, if needed the value should be **true** if not it should be **false** or not supplied
+- KERAS_BACKEND: specify backend for Keras, currently **Theano** because of concurrency issue
+- TEST_MODE: the option whether to not download data from Bing, if needed the value should be **true** if not it should be **false** or not supplied
  
 #### Api 
 - CELERY_BROKER: address of Redis broker ('redis://localhost:6379/3/')
 - MODE: service name for startup script
 - CACHE_RESULTS: address of a redis result cache
 - CACHE_ANALYSIS: address of a redis analysis status cache
-- RESULTS_DB: redis result db
-- ANALYSIS_DB: redis analysis status db
+- RESULTS_DB: result db while using Redis
+- ANALYSIS_DB: analysis status db  while using Redis
 
 
 Redis dbs:
