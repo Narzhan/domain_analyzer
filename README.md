@@ -6,9 +6,13 @@ mailicious or not and uses a search engine data for it. For running the code you
 Requirements
 =========
 The only thing a user needs for setup is **Bing** api key, which would get the data. If key is not provided a **dry-run** option can be used.
-In that scenario a random choice of two domain data is presented to the user. The option to not use Docker is not unspported at the moment however the user 
+In that scenario a random choice of data for two domain data is presented to the user. The option to not use Docker is not supported at the moment however the user 
 may try to get it running using the information in Dockerfile and docker-compose.
 
+Usage
+=========
+To try it out just run following command in the root of the repo. The preconfigured docker-compose is to to dry-run so no key is necessary.
+`docker-compose up -d`
 
 Behaviour
 =========
