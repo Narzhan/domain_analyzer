@@ -12,6 +12,7 @@ may try to get it running using the information in Dockerfile and docker-compose
 Usage
 =========
 To try it out just run following command in the root of the repo. The preconfigured docker-compose is to to dry-run so no key is necessary.
+
 `docker-compose up -d`
 
 Behaviour
