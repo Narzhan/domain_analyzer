@@ -15,6 +15,13 @@ To try it out just run following command in the root of the repo. The preconfigu
 
 `docker-compose up -d`
 
+Test Mode
+=========
+The system supports a dry run option called **Test mode**. It allows a test usage without the need for Bing api key. If used, upon receiving a request one
+of the two pre loaded data samples is selected. These samples are data from Bing of two domains one is malicious and one is clean from a one point of time.   
+When a request for analysis is invoked a random one of the two samples is selected. Therefore it is possible to get malicious analysis result for clean domain and vice versa.
+
+
 Behaviour
 =========
 The user interacts with the system via REST API. Example of the request mich be something like this:
