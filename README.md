@@ -9,18 +9,18 @@ The only thing a user needs for setup is **Bing** api key, which would get the d
 In that scenario a random choice of data for two domain data is presented to the user. The option to not use Docker is not supported at the moment however the user 
 may try to get it running using the information in Dockerfile and docker-compose.
 
-Usage
-=========
-To try it out just run following command in the root of the repo. The preconfigured docker-compose is to to dry-run so no key is necessary.
-
-`docker-compose up -d`
-
 Test Mode
 =========
 The system supports a dry run option called **Test mode**. It allows a test usage without the need for Bing api key. If used, upon receiving a request one
 of the two pre loaded data samples is selected. These samples are data from Bing of two domains one is malicious and one is clean from a one point of time.   
 When a request for analysis is invoked a random one of the two samples is selected. Therefore it is possible to get malicious analysis result for clean domain and vice versa.
 
+
+Usage
+=========
+To try it out just run following command in the root of the repo. The preconfigured docker-compose is to to dry-run so no key is necessary.
+
+`docker-compose up -d`
 
 Behaviour
 =========
