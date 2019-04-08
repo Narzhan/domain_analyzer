@@ -1,7 +1,7 @@
 Domain analyzer
 =========
-The purpose of this repository is to provide a container for a domain analysis. The analysis evaluate whether the domain is 
-mailicious or not and uses a search engine data for it. For running the code you would need Docker. To start use the convenience **docker-compose.yml** in root of this project.
+The purpose of this repository is to provide a system for a domain analysis. The system evaluates whether the domain is 
+malicious or not and uses a search engine data for it. For running the code you would need Docker. To start use the convenience **docker-compose.yml** in root of this project.
 
 Requirements
 =========
@@ -18,20 +18,22 @@ When a request for analysis is invoked a random one of the two samples is select
 
 Usage
 =========
-To try it out just run following command in the root of the repo. The preconfigured docker-compose is to to dry-run so no key is necessary.
+To try it out just run following command in the root of the repo. The preconfigured docker-compose is set up with dry-run so no key or set up is necessary.
 
 `docker-compose up -d`
 
 Behaviour
 =========
-The user interacts with the system via REST API. Example of the request mich be something like this:
+The user interacts with the system via REST API using HTTP POST requests. Example of the request mich be something like this:
 
 `curl -X POST http://localhost:8000/predict -d '{"domain": "google.com"}'`
 
 The communication with the api is described in [Swagger](https://app.swaggerhub.com/apis/Narzhan/Oraculum/1.0.0)  
 
-Envs
+Environment variables
 ----------
+The system allows configuration using following environment variables
+
 
 #### Domain_analyzer 
 - CELERY_BROKER: address of Redis broker ('redis://localhost:6379/3')
@@ -43,7 +45,7 @@ Envs
 - RECORD_TTL: ttl of the analysis record
 - BING_API_KEY: api key for bing [Conginitve api](https://azure.microsoft.com/en-us/services/cognitive-services/)
 - PERSIST_DATA: the option to persist the data for future use (retraining) default path is **/opt/domain_analyzer/data/**, if needed the value should be **true** if not it should be **false** or not supplied
-- KERAS_BACKEND: specify backend for Keras, currently **Theano** because of concurrency issue
+- KERAS_BACKEND: specify backend for **Keras**, currently **Theano** because of concurrency issue
 - TEST_MODE: the option whether to not download data from Bing, if needed the value should be **true** if not it should be **false** or not supplied
  
 #### Api 
@@ -55,7 +57,7 @@ Envs
 - ANALYSIS_DB: analysis status db  while using Redis
 
 
-Redis dbs:
+Cache (Redis) dbs:
 ----------
 - 2: Analysis results
 - 3: Celery broker data
