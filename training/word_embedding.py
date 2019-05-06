@@ -4,44 +4,47 @@ import json
 # import string
 # from gensim.models import word2vec
 import matplotlib.pyplot as plt
-# from gensim.models import FastText
-# import gensim, \
+from gensim.models import FastText
+import gensim
 import pickle
 from keras import Input, Model
-from keras.layers import Embedding, SpatialDropout1D, LSTM, Dense, Dropout, GRU, Bidirectional
+from keras.layers import Embedding, SpatialDropout1D, LSTM, Dense, Dropout, GRU, Bidirectional, GlobalMaxPool1D
 from keras.preprocessing.text import Tokenizer
-# from numpy import asarray
+from numpy import asarray
+from sklearn import model_selection
+from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import confusion_matrix, classification_report, accuracy_score
 from sklearn.model_selection import train_test_split
 from keras.preprocessing.sequence import pad_sequences
 from keras.models import load_model
-# from nltk.stem import WordNetLemmatizer, SnowballStemmer
-# nltk.download('wordnet')
+from nltk.stem import WordNetLemmatizer, SnowballStemmer
+import nltk
+nltk.download('wordnet')
 
 
 dataset = pandas.read_csv("text_test_data_splitted.csv", index_col=3, encoding='utf-8', delimiter=";", engine="python")
 dataset = dataset.replace(np.nan, '', regex=True)
 dataset = dataset.sort_index()
-languages = ["en", "cs", "de", "es", "fr", "ja", "ru", "zh"]
-# filter_languages = ["en", "de", "es", "fr", "ja", "ru", "zh"]
-# pretrained_dataset = dataset.loc[dataset["language"].isin(languages)]
+languages = ["en", "cs", "de", "fr", "ru"]
+# # filter_languages = ["en", "de", "es", "fr", "ja", "ru", "zh"]
+# # pretrained_dataset = dataset.loc[dataset["language"].isin(languages)]
 # customtrain_dataset = dataset.loc[~dataset["language"].isin(languages)]
+# dataset = None
 
-
-# def preprocess(text):
-#     # convert to list the input
-#     tokens = [key.lower() for key in nltk.word_tokenize(text)]
-#     words = [word for word in tokens if word.isalpha()]
-#     return words
+# # # def preprocess(text):
+# # #     # convert to list the input
+# # #     tokens = [key.lower() for key in nltk.word_tokenize(text)]
+# # #     words = [word for word in tokens if word.isalpha()]
+# # #     return words
 
 
 # stemmer = SnowballStemmer('english')
-#
-#
+
+
 # def lemmatize_stemming(text):
 #     return stemmer.stem(WordNetLemmatizer().lemmatize(text, pos='v'))
-#
-#
+
+
 # def preprocess(text):
 #     result = []
 #     for token in gensim.utils.simple_preprocess(text):
@@ -49,23 +52,25 @@ languages = ["en", "cs", "de", "es", "fr", "ja", "ru", "zh"]
 #             result.append(lemmatize_stemming(token))
 #     return result
 
-# seq_lengths = dataset.text.apply(lambda x: len(x.split(' ')))
-# print(int(seq_lengths.describe()["max"]))
+# # # seq_lengths = dataset.text.apply(lambda x: len(x.split(' ')))
+# # # print(int(seq_lengths.describe()["max"]))
 
 # processed_docs = customtrain_dataset['text'].map(preprocess)
-# processed_docs = pickle.load(open("splitted_docs.pkl", "rb"))
-# pickle.dump(processed_docs, open("splitted_text/word_embedding/splitted_docs.pkl", "wb"))
-feature_size = 300
-window_context = 10
-min_word_count = 5
-sample = 1e-3
+# # # print(processed_docs)
 
-####### Fast Text
+# # # processed_docs = pickle.load(open("splitted_docs.pkl", "rb"))
+# # # pickle.dump(processed_docs, open("splitted_text/word_embedding/splitted_docs.pkl", "wb"))
+feature_size = 300
+# min_word_count = 2
+# window_context = 10
+# sample = 1e-3
+
+# ###### Fast Text
 # fast_text = FastText(processed_docs, size=feature_size,
 #                      window=window_context, min_count=min_word_count, sample=sample,
-#                      iter=50)
-# fast_text.save("splitted_text/word_embedding/fast_text/fast_text.pkl")
-# fast_text.wv.save_word2vec_format("pretrained/custom_embedding.txt", binary=False)
+#                      iter=10, sg=1, hs=1, workers=6, word_ngrams=1, min_n=2, max_n=20, sorted_vocab=1, negative=5)
+# # fast_text.save("splitted_text/word_embedding/fast_text/fast_text.pkl")
+# fast_text.wv.save_word2vec_format("pretrained/custom_embedding_al.txt", binary=False)
 # fast_text, processed_docs = None, None
 
 ######Word2Vec
@@ -77,13 +82,14 @@ sample = 1e-3
 
 # t = Tokenizer()
 # t.fit_on_texts(dataset.text)
-t = pickle.load(open("splitted_text/word_embedding/tokenizer.pkl", "rb"))
+t = pickle.load(open("tokenizer.pkl", "rb"))
 vocab_size = len(t.word_index) + 1
 # embedding_matrix = np.zeros((vocab_size, 300))
-# files_location = ["wiki.cs.vec", "wiki.de.vec", "wiki.en.vec", "wiki.es.vec", "wiki.fr.vec", "wiki.ja.vec",
-#                   "wiki.ru.vec", "wiki.zh.vec"]
+# #embedding_matrix = np.load("fasttext_embedding_martix_mixed.npy")
+# files_location = ["wiki.cs.align.vec", "wiki.de.align.vec", "wiki.en.align.vec", "wiki.fr.align.vec",
+#                   "wiki.ru.align.vec"]
 # for file_location in files_location:
-#     with open("pretrained/{}".format(file_location), "r") as file:
+#     with open("aligned/{}".format(file_location), "r") as file:
 #         next(file)
 #         for line in file:
 #             values = line.split()
@@ -92,14 +98,20 @@ vocab_size = len(t.word_index) + 1
 #                 coefs = asarray(values[len(values)-300:], dtype='float32') # convert to float16
 #                 embedding_matrix[t.word_index[values[0]]] = coefs
 #
-# with open("pretrained/custom_embedding.txt", "r") as file:
+# with open("pretrained/custom_embedding_al.txt", "r") as file:
+#     next(file)
 #     for line in file:
 #         values = line.split()
 #         # if values[0] in t.word_index:
 #         # word = values[0]
 #         coefs = asarray(values[len(values) - 300:], dtype='float32')
-#         embedding_matrix[t.word_index[values[0]]] = coefs
-# np.save("splitted_text/word_embedding/fast_text/embedding_martix.npy", embedding_matrix)
+#         try:
+#             embedding_matrix[t.word_index[values[0]]] = coefs
+#         except Exception as e:
+#             pass
+        
+# np.save("pretrained/embedding_martix_custom_al.npy", embedding_matrix)
+# print("Zeroes: {}".format(np.sum(~embedding_matrix.any(1))))
 
 ####Wod2vec
 # embedding_matrix = np.zeros((len(w2v_model.wv.vocab), feature_size))
@@ -127,12 +139,13 @@ vocab_size = len(t.word_index) + 1
 MAX_LEN = 134
 X_train_seq_trunc = pad_sequences(t.texts_to_sequences(dataset.text), maxlen=MAX_LEN)
 # X_test_seq_trunc = pad_sequences(t.texts_to_sequences(X_test), maxlen=MAX_LEN)
-X_train, X_valid, y_train, y_valid, domains_train, domains_valid = train_test_split(X_train_seq_trunc, dataset.label,
-                                                                                    dataset.index.tolist(),
-                                                                                    test_size=0.2, random_state=7,
-                                                                                    stratify=dataset.label)
+X_train, X_validation, Y_train, Y_validation, domains_train, domains_valid = train_test_split(X_train_seq_trunc, dataset.label,
+                                                                                              dataset.index.tolist(),
+                                                                                              test_size=0.2, random_state=7,
+                                                                                              stratify=dataset.label)
 X_train_seq_trunc = None
-dataset, t = None, None
+# dataset, t = None, None
+t=None
 num_epoches = 6
 batch = 8049
 num_neurons = 50
@@ -161,8 +174,8 @@ def create_rnn_lstm(method: str):
     model.compile(optimizer="adam", loss='binary_crossentropy', metrics=['accuracy'])
     # model = load_model("untrained/lstm_{}.h5".format(method))
     # Fitting our model
-    history = model.fit(X_train, y_train, validation_data=(X_valid, y_valid), batch_size=batch, epochs=num_epoches)
-    model.save("lstm_{}.h5".format(method), include_optimizer=store_training=store_training)
+    history = model.fit(X_train, Y_train, validation_data=(X_validation, Y_validation), batch_size=batch, epochs=num_epoches)
+    model.save("lstm_{}.h5".format(method), include_optimizer=store_training)
     evaluate_model(model)
     with open("train_results_lstm_{}.json".format(method), "w") as file:
         json.dump(history.history, file)
@@ -194,7 +207,7 @@ def create_rnn_gru(method: str):
     model.compile(optimizer="adam", loss='binary_crossentropy', metrics=['accuracy'])
     # model = load_model("untrained/gru_{}.h5".format(method))
     # Fitting our model
-    history = model.fit(X_train, y_train, validation_data=(X_valid, y_valid), batch_size=batch, epochs=num_epoches)
+    history = model.fit(X_train, Y_train, validation_data=(X_validation, Y_validation), batch_size=batch, epochs=num_epoches)
     model.save("gru_{}.h5".format(method), include_optimizer=store_training)
     evaluate_model(model)
     with open("train_results_gru_{}.json".format(method), "w") as file:
@@ -215,23 +228,28 @@ def create_bidirectional_rnn(method: str):
     embedding_layer = SpatialDropout1D(0.3)(embedding_layer)
 
     # Add the LSTM Layer
-    lstm_layer = Bidirectional(GRU(num_neurons))(embedding_layer)
+    lstm_layer = Bidirectional(LSTM(num_neurons))(embedding_layer)
+    pooling = GlobalMaxPool1D()(embedding_layer)    
 
     # Add the output Layers
+    output_layer1 = Dropout(0.3)(lstm_layer)
     output_layer1 = Dense(50, activation="relu")(lstm_layer)
-    output_layer1 = Dropout(0.25)(output_layer1)
+    output_layer1 = Dropout(0.3)(output_layer1)
     output_layer2 = Dense(1, activation="sigmoid")(output_layer1)
 
     # Compile the model
     model = Model(inputs=input_layer, outputs=output_layer2)
     model.compile(optimizer="adam", loss='binary_crossentropy', metrics=['accuracy'])
+    model.save("bilstm_{}.h5".format(method), include_optimizer=store_training)
+
     # model = load_model("untrained/bilstm_{}.h5".format(method))
     # Fitting our model
-    history = model.fit(X_train, y_train, validation_data=(X_valid, y_valid), batch_size=batch, epochs=num_epoches)
-    model.save("bilstm_{}.h5".format(method), include_optimizer=store_training)
-    evaluate_model(model)
-    with open("train_results_bilstm_{}.json".format(method), "w") as file:
-        json.dump(history.history, file)
+    # history = model.fit(X_train, Y_train, validation_data=(X_validation, Y_validation), batch_size=batch, epochs=num_epoches)
+    # model.save("bilstm_{}.h5".format(method), include_optimizer=store_training)
+    # evaluate_model(model)
+    # model.load_weights()
+    # with open("train_results_bilstm_{}.json".format(method), "w") as file:
+    #     json.dump(history.history, file)
     # eval_metric(history, "acc", "en", method, "bilstm")
     # eval_metric(history, "loss", "en", method, "bilstm")
     # eval_metric(history, "acc", "cz", method, "bilstm")
@@ -259,7 +277,7 @@ def without_embedding():
     model.compile(optimizer="adam", loss='binary_crossentropy', metrics=['accuracy'])
     # model = load_model("untrained/no_mbedding_lstm.h5")
     # Fitting our model
-    history = model.fit(X_train, y_train, validation_data=(X_valid, y_valid), batch_size=batch, epochs=num_epoches)
+    history = model.fit(X_train, Y_train, validation_data=(X_validation, Y_validation), batch_size=batch, epochs=num_epoches)
     model.save("no_mbedding_lstm.h5", include_optimizer=store_training)
     evaluate_model(model)
     with open("train_results_no_embedding.json", "w") as file:
@@ -290,22 +308,43 @@ def eval_metric(history, metric_name, lang, emb, nn):
 
 
 def evaluate_model(classifier):
-    y_pred = classifier.predict(X_valid, batch_size=2048)
+    y_pred = classifier.predict(X_validation, batch_size=2048)
     y_pred = (y_pred > 0.5)
-    print(accuracy_score(y_valid, y_pred))
-    print(confusion_matrix(y_valid, y_pred))
-    print(classification_report(y_valid, y_pred))
+    print(accuracy_score(Y_validation, y_pred))
+    print(confusion_matrix(Y_validation, y_pred))
+    print(classification_report(Y_validation, y_pred))
 
 
 def transform_data(model_name: str):
     model = load_model(model_name)
     x_train = model.predict(X_train, batch_size=1024)
-    x_train = (x_train > 0.5)
-    x_valid = model.predict(X_train, batch_size=1024)
-    x_valid = (x_valid > 0.5)
-    result_dataset = pandas.DataFrame(data=np.concatenate((x_train, x_valid), axis=0),
-                                  index=np.concatenate((domains_train, domains_valid), axis=0), columns=["we"])
-    result_dataset.to_csv("result_data.csv")
+    # x_train = (x_train > 0.5)
+    x_valid = model.predict(X_validation, batch_size=1024)
+    # x_valid = (x_valid > 0.5)
+    # result_dataset = pandas.DataFrame(data=np.concatenate((x_train, x_valid), axis=0),
+    #                               index=np.concatenate((domains_train, domains_valid), axis=0), columns=["we"])
+    result_dataset = pandas.DataFrame({"domain": np.concatenate((domains_train, domains_valid), axis=0),
+                                       "we": np.concatenate((x_train, x_valid), axis=0)})
+    result_dataset.to_csv("backup.csv")
+    result_dataset = result_dataset.groupby('domain').agg(lambda x: x.tolist())
+    final_dataset = pandas.DataFrame(result_dataset['we'].values.tolist(), index=result_dataset.index)
+    final_dataset = final_dataset.replace(np.nan, 0, regex=True)
+    final_dataset.to_csv("train_data.csv")
+    final_dataset["label"] = dataset["label"]
+    final_dataset.to_csv("train_data2.csv")
+    array = final_dataset.values
+    X = array[:, 0:-1]
+    Y = array[:, -1]
+    X_trai, X_validatio, Y_train, Y_validation = model_selection.train_test_split(X, Y,
+                                                                                    test_size=0.2,
+                                                                                    random_state=7)
+    classifier = RandomForestClassifier(n_estimators=100, n_jobs=-1)
+    classifier.fit(X_trai, Y_train)
+    pickle.dump(classifier, open("prob_model.pkl", "wb"))
+    predictions = classifier.predict(X_validatio)
+    print(accuracy_score(Y_validation, predictions))
+    print(confusion_matrix(Y_validation, predictions))
+    print(classification_report(Y_validation, predictions))
     # result_dataset = pandas.DataFrame({"predictions": np.concatenate((x_train, x_valid), axis=0),
     #                                    "domains": np.concatenate((domains_train, domains_valid), axis=0),
     #                                    "labels": np.concatenate((y_train, y_valid), axis=0)}
@@ -320,10 +359,11 @@ def transform_data(model_name: str):
     # temp_dataset.set_index("domains", inplace=True)
     # temp_dataset.to_csv("{}.csv".format(model_name))
 
-for model in ["bilstm_fasttext_mixed.h5", "lstm_w2v_custom.h5", "lstm_w2v_mixed.h5", "no_embedding_trained_bias_l1.h5"]:
-    model = model.replace(".h5", "")
-    transform_data(model)
-
+# for model in ["embedding_martix.npy", "embedding_martix_custom.npy", "embedding_martix_custom_al.npy"]:
+#     embedding_matrix = np.load("pretrained/{}".format(model))
+#     model = model.replace(".npy", "")
+#     create_bidirectional_rnn(model)
+transform_data("we_model.h5")
 # for emb_type in ["w2v_embedding_martix_mixed.npy", "fasttext_embedding_martix_custom.npy",
 #                  "fasttext_embedding_martix_mixed.npy", "w2v_embedding_martix_custom.npy"]:
 #     # embedding_matrix = np.load(emb_type)

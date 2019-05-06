@@ -2,12 +2,16 @@ import pandas as pd
 import numpy as np
 import pickle
 from catboost import CatBoostClassifier
+from keras import Sequential
 from sklearn import model_selection
 from sklearn.ensemble import BaggingClassifier, RandomForestClassifier, AdaBoostClassifier, GradientBoostingClassifier
+from sklearn.linear_model import LogisticRegression
 from sklearn.model_selection import RandomizedSearchCV, GridSearchCV
+from keras.layers import Dense, Dropout
+from sklearn.svm import LinearSVC
 from xgboost import XGBClassifier
 import lightgbm as lgb
-from sklearn.metrics import accuracy_score, classification_report
+from sklearn.metrics import accuracy_score, classification_report, confusion_matrix
 
 
 def load_data(file: str):
@@ -58,6 +62,8 @@ def load_data(file: str):
 def models():
     print("Test started")
     models = []
+    models.append(('LR', LogisticRegression(solver='lbfgs', class_weight="balanced")))
+    models.append(('SVM(linear)', LinearSVC(max_iter=2000)))
     models.append(('BMeta', BaggingClassifier()))
     models.append(('RForest', RandomForestClassifier(n_estimators=100)))
     models.append(('Ada', AdaBoostClassifier()))
@@ -91,6 +97,22 @@ def train_model(name: str):
                                   index=np.concatenate((domains_train, domains_test), axis=0), columns=[name])
     result_dataset.to_csv("splitted_text/tf_idf/result_data.csv")
     pickle.dump(classifier, open("splitted_text/tf_idf/model.pkl", "wb"))
+
+def train_nn():
+    classifier = Sequential()
+    classifier.add(Dense(output_dim=60, init='uniform', activation='relu', input_dim=X_train.shape[1]))
+    classifier.add(Dropout(0.3))
+    classifier.add(Dense(output_dim=20, init='uniform', activation='relu'))
+    classifier.add(Dropout(0.2))
+    classifier.add(Dense(output_dim=1, init='uniform', activation='sigmoid'))
+    classifier.compile(optimizer='adam', loss='binary_crossentropy', metrics=['accuracy'])
+    classifier.fit(X_train, Y_train, validation_data=(X_validation, Y_validation), batch_size=64, epochs=5)
+    classifier.save("dense_model.h5", include_optimizer=False)
+    y_pred = classifier.predict(X_validation, batch_size=32)
+    y_pred = (y_pred > 0.5)
+    print(accuracy_score(Y_validation, y_pred))
+    print(confusion_matrix(Y_validation, y_pred))
+    print(classification_report(Y_validation, y_pred))
 
 
 def hyper_parameters():
@@ -178,13 +200,41 @@ def light_gbm():
     # print('The mean of prediction is:', y_pred.mean(), y_pred.std())
 
 
+def nn():
+    classifier = Sequential()
+    # Adding the input layer and the first hidden layer
+    classifier.add(Dense(output_dim=60, init='uniform', activation='relu', input_dim=X_train.shape[1]))
+    classifier.add(Dropout(0.3))
+    # Adding the second hidden layer
+    classifier.add(Dense(output_dim=20, init='uniform', activation='relu'))
+    classifier.add(Dropout(0.2))
+    # Adding the output layer
+    classifier.add(Dense(output_dim=1, init='uniform', activation='sigmoid'))
+
+    classifier.compile(optimizer='adam', loss='binary_crossentropy', metrics=['accuracy'])
+    # classifier.save("test.h5")
+    # classifier = load_model("test.h5")
+    # Fitting our model
+    history = classifier.fit(X_train, Y_train, validation_data=(X_validation, Y_validation), batch_size=64, epochs=5)
+    classifier.save("tf_idf/dense_model.h5", include_optimizer=False)
+    nn_predict(classifier)
+
+
+def nn_predict(classifier):
+    y_pred = classifier.predict(X_validation, batch_size=32)
+    y_pred = (y_pred > 0.5)
+    print(accuracy_score(Y_validation, y_pred))
+    print(confusion_matrix(Y_validation, y_pred))
+    print(classification_report(Y_validation, y_pred))
+
+
 # for model in ["bilstm_fasttext_mixed", "lstm_w2v_custom", "lstm_w2v_mixed", "no_embedding_trained_bias_l1"]:
-for model in [1]:
+for model in ["dataframe_no_embedding_trained_bias_l1.csv"]:
     print("Going over {} model".format(model))
     print("#######################################")
-    dataset = load_data("preprocessed/{}.csv".format(model))
-    dataset.to_csv("preprocessed/dataframe_{}.csv".format(model))
-    # dataset = pd.read_csv("{}.csv".format(model), index_col=0, encoding='utf-8')
+    # dataset = load_data("preprocessed/{}.csv".format(model))
+    # dataset.to_csv("preprocessed/dataframe_{}.csv".format(model))
+    dataset = pd.read_csv("splitted_text/word_embedding/preprocessed/{}".format(model), index_col=0, encoding='utf-8')
     array = dataset.values
     domains = dataset.index.values
     dataset = None
@@ -200,5 +250,6 @@ for model in [1]:
                                                                                                                  random_state=seed)
     X, Y = None, None
     # evaluate_model("splitted_text/lda/model.pkl")
-    light_gbm()
-    models()
+    # light_gbm()
+    # models()
+    train_nn()

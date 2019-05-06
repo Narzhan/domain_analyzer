@@ -130,27 +130,52 @@ import pandas, pickle
 #     coefs = asarray(values[1:], dtype='float32')
 #     embeddings_index[word] = coefs
 # f.close()
-incorrect_domins = ["usa.cc", "turkhackteam.org", "nut.cc", "ferozo.com", "criticbay.com", "servicemarket.su",
-                    "quanmama.com", "byethost13.com", "beget.tech", "forumattivo.it", "newtonpaiva.br", "cpvdo.com",
-                    "hpsd.k12.pa.us", "eldivisadero.cl", "seriesgato.tv", "roamans.com", "paisabazaar.com",
-                    "okhatrimaza.org", "paypal-customerfeedback.com", "saldao-mes-das-criancas.com", "lomo.jp",
-                    "dresk.ru", "umbler.net", "userproplugin.com", "seriesgato.com", "tvoe-zoloto.com", "unaux.com",
-                    "perfectliker.com", "statichtmlapp.com", "wefbee.com", "crkphotoimaging.com.au", "hatenablog.com",
-                    "aasaanjobs.com", "copymethat.com", "jigsy.com", "celitel2.com", "4gram.com",
-                    "epochtimeschicago.com", "xsph.ru", "creditonebank.com", "tc-clicks.com", "jeun.fr",
-                    "byethost8.com", "flazio.com", "tripod.com", "doctr1ne.com", "ulcraft.com", "live.com",
-                    "likesgroup.com", "filmshared.com", "19tv.top", "naijaextra.com", "capitalcu.com", "cewomen.com",
-                    "pfashionmart.com", "webhostbox.net", "7m.pl", "begambleaware.org", "dunya.com.pk",
-                    "exploreourapps.com", "uol.com.br", "surveygizmo.com", "fbsub.de", "byethost32.com", "zz.am",
-                    "nacosti.go.ke", "ultimatefreehost.in", "idgod.ph", "dotapicker.com", "cuasotinhyeu.vn",
-                    "yamadadenkishop.com", "adexten.com", "byethost12.com", "igg.biz", "zzz.com.ua",
-                    "playstationmail.net", "linkbax.com", "watchcric.eu", "traktrafficflow.com", "tumblr.com",
-                    "my-free.website", "clickconfirmation.com", "2090000.ru", "e-monsite.com", "telegra.ph",
-                    "emailaccessonline.com", "vipfb.es", "officialliker.co", "comuesp.com", "byethost7.com",
-                    "hostland.pro", "webxion.com", "myartsonline.com", "toexten.com", "icloudbaypass.com", "ukit.me",
-                    "2go.com.ph", "cabanova.com", "strikingly.com", "yola.com", "pe.hu", "cla.fr", "somee.com", "es.tl",
-                    "dreamscape317.net", "html-5.me"]
-remove = {'barnygeeft.byethost6.com', 'byethost9.com', 'byethost.com'}
+# incorrect_domins = ["usa.cc", "turkhackteam.org", "nut.cc", "ferozo.com", "criticbay.com", "servicemarket.su",
+#                     "quanmama.com", "byethost13.com", "beget.tech", "forumattivo.it", "newtonpaiva.br", "cpvdo.com",
+#                     "hpsd.k12.pa.us", "eldivisadero.cl", "seriesgato.tv", "roamans.com", "paisabazaar.com",
+#                     "okhatrimaza.org", "paypal-customerfeedback.com", "saldao-mes-das-criancas.com", "lomo.jp",
+#                     "dresk.ru", "umbler.net", "userproplugin.com", "seriesgato.com", "tvoe-zoloto.com", "unaux.com",
+#                     "perfectliker.com", "statichtmlapp.com", "wefbee.com", "crkphotoimaging.com.au", "hatenablog.com",
+#                     "aasaanjobs.com", "copymethat.com", "jigsy.com", "celitel2.com", "4gram.com",
+#                     "epochtimeschicago.com", "xsph.ru", "creditonebank.com", "tc-clicks.com", "jeun.fr",
+#                     "byethost8.com", "flazio.com", "tripod.com", "doctr1ne.com", "ulcraft.com", "live.com",
+#                     "likesgroup.com", "filmshared.com", "19tv.top", "naijaextra.com", "capitalcu.com", "cewomen.com",
+#                     "pfashionmart.com", "webhostbox.net", "7m.pl", "begambleaware.org", "dunya.com.pk",
+#                     "exploreourapps.com", "uol.com.br", "surveygizmo.com", "fbsub.de", "byethost32.com", "zz.am",
+#                     "nacosti.go.ke", "ultimatefreehost.in", "idgod.ph", "dotapicker.com", "cuasotinhyeu.vn",
+#                     "yamadadenkishop.com", "adexten.com", "byethost12.com", "igg.biz", "zzz.com.ua",
+#                     "playstationmail.net", "linkbax.com", "watchcric.eu", "traktrafficflow.com", "tumblr.com",
+#                     "my-free.website", "clickconfirmation.com", "2090000.ru", "e-monsite.com", "telegra.ph",
+#                     "emailaccessonline.com", "vipfb.es", "officialliker.co", "comuesp.com", "byethost7.com",
+#                     "hostland.pro", "webxion.com", "myartsonline.com", "toexten.com", "icloudbaypass.com", "ukit.me",
+#                     "2go.com.ph", "cabanova.com", "strikingly.com", "yola.com", "pe.hu", "cla.fr", "somee.com", "es.tl",
+#                     "dreamscape317.net", "html-5.me"]
+# remove = {'barnygeeft.byethost6.com', 'byethost9.com', 'byethost.com'}
+from keras.utils import plot_model
+from keras.models import load_model
+from IPython.display import SVG
+
+import conx as cx
+model = load_model("pca/standard_model_nn.h5")
+SVG(model_to_dot(model).create(prog='dot', format='svg'))
+
+
+
+
+# dataset_lda = pandas.read_csv("dataframe_enhanced.csv", index_col=0)
+# for domain in incorrect_domins:
+#     line= dataset_lda.loc[domain]
+#     if line["label"] == 1.0:
+#         try:
+#             os.remove("D:/Narzhan/Documents/dipl/data/clean/data/{}.json".format(domain))
+#         except Exception as e:
+#             print(e)
+#     else:
+#         try:
+#             os.remove("D:/Narzhan/Documents/dipl/data/malicious/data/{}.json".format(domain))
+#         except Exception as e:
+#             print(e)
+
 # dataset_lda = pandas.read_csv("splitted_text/lda/result_data.csv", index_col=0)
 # dataset_tfidf = pandas.read_csv("splitted_text/tf_idf/result_data.csv", index_col=0)
 
@@ -173,28 +198,28 @@ remove = {'barnygeeft.byethost6.com', 'byethost9.com', 'byethost.com'}
 #
 # if len(temp) != len(incorrect_domins):
 #     print(temp)
-from keras import Input, Model
-from keras.layers import Embedding, SpatialDropout1D, LSTM, Dense, Dropout, GRU, Bidirectional, GlobalMaxPool1D
-
-t = pickle.load(open("splitted_text/word_embedding/tokenizer.pkl", "rb"))
-vocab_size = len(t.word_index) + 1
-t=None
-MAX_LEN = 134
-input_layer = Input((MAX_LEN,))
-
-# Add the word embedding Layer
-embedding_layer = Embedding(vocab_size, 100)(input_layer)
-embedding_layer = SpatialDropout1D(0.4)(embedding_layer)
-
-# Add the LSTM Layer
-lstm_layer = LSTM(25)(embedding_layer)
-pooling = GlobalMaxPool1D()(embedding_layer)
-# Add the output Layers
-output_layer1 = Dense(50, activation="relu")(lstm_layer)
-output_layer1 = Dropout(0.4)(output_layer1)
-output_layer2 = Dense(1, activation="sigmoid")(output_layer1)
-
-# Compile the model
-model = Model(inputs=input_layer, outputs=output_layer2)
-model.compile(optimizer="adam", loss='binary_crossentropy', metrics=['accuracy'])
-model.save("no_embedding.h5")
+# from keras import Input, Model
+# from keras.layers import Embedding, SpatialDropout1D, LSTM, Dense, Dropout, GRU, Bidirectional, GlobalMaxPool1D
+#
+# t = pickle.load(open("splitted_text/word_embedding/tokenizer.pkl", "rb"))
+# vocab_size = len(t.word_index) + 1
+# t=None
+# MAX_LEN = 134
+# input_layer = Input((MAX_LEN,))
+#
+# # Add the word embedding Layer
+# embedding_layer = Embedding(vocab_size, 100)(input_layer)
+# embedding_layer = SpatialDropout1D(0.4)(embedding_layer)
+#
+# # Add the LSTM Layer
+# lstm_layer = LSTM(25)(embedding_layer)
+# pooling = GlobalMaxPool1D()(embedding_layer)
+# # Add the output Layers
+# output_layer1 = Dense(50, activation="relu")(lstm_layer)
+# output_layer1 = Dropout(0.4)(output_layer1)
+# output_layer2 = Dense(1, activation="sigmoid")(output_layer1)
+#
+# # Compile the model
+# model = Model(inputs=input_layer, outputs=output_layer2)
+# model.compile(optimizer="adam", loss='binary_crossentropy', metrics=['accuracy'])
+# model.save("no_embedding.h5")

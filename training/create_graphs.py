@@ -1,23 +1,94 @@
-import pandas
-from pandas.plotting import scatter_matrix
-import numpy as np
-import matplotlib.pyplot as plt
-import seaborn as sns
-from scipy import stats
-import matplotlib.mlab as mlab
-import csv, ast, operator
+import ast
+import csv
+import operator
 from statistics import mean, stdev
 
+import matplotlib.pyplot as plt
+import numpy as np
+import pandas
+import matplotlib
+from mpl_toolkits.mplot3d import axes3d
+import seaborn as sns
+from pandas.plotting import scatter_matrix
+from sklearn.discriminant_analysis import LinearDiscriminantAnalysis
+
 dataset = pandas.read_csv("dataframe_enhanced.csv", index_col=0)
+del dataset["tf_idf"]
+del dataset["topics"]
+del dataset["embedding"]
 # sns.pairplot(dataset, hue='label')
 
+
+def reduced_data_pca():
+    array = dataset.values
+    X = array[:, 0:-1]
+    Y = array[:, -1]
+    from sklearn.preprocessing import StandardScaler
+    from sklearn.decomposition import PCA
+    scaler = StandardScaler()
+    X = scaler.fit_transform(X)
+    from mpl_toolkits.mplot3d import Axes3D
+    Axes3D = Axes3D
+    pca = PCA(n_components=3)
+    principalComponents = pca.fit_transform(X)
+    # print(pca.explained_variance_ratio_)
+    # raise Exception
+    principalDf = pandas.DataFrame(data=principalComponents, index=dataset.index
+                               , columns=['principal component 1', 'principal component 2', 'principal component 3'])
+    principalDf = principalDf.join(dataset["label"])
+    print(principalDf)
+    fig = plt.figure(figsize=(8, 6))
+    ax = fig.add_subplot(111, projection='3d')
+
+    xs = principalDf[principalDf["label"]==1]['principal component 1']
+    ys = principalDf[principalDf["label"]==1]['principal component 2']
+    zs = principalDf[principalDf["label"]==1]['principal component 3']
+
+    xt = principalDf[principalDf["label"]==0]['principal component 1']
+    yt = principalDf[principalDf["label"]==0]['principal component 2']
+    zt = principalDf[principalDf["label"]==0]['principal component 3']
+    # ax.scatter(xs, ys, zs, s=50, alpha=0.6, label=dataset["label"], edgecolors='w')
+    ax.scatter(xs, ys, zs, c='orange', s=50, alpha=0.6, edgecolors='w')
+    ax.scatter(xt, yt, zt, c='b', s=50, alpha=0.6, edgecolors='w')
+
+    ax.set_xlabel('principal component 1')
+    ax.set_ylabel('principal component 2')
+    ax.set_zlabel('principal component 3')
+
+    plt.show()
+    # ax = sns.scatterplot(x="principal component 1", y="principal component 2", data=principalDf, hue="label")
+    # plt.show()
+
+
+def reduced_data_lda():
+    array = dataset.values
+    X = array[:, 0:-1]
+    Y = array[:, -1]
+    from sklearn.preprocessing import StandardScaler
+    scaler = StandardScaler()
+    X = scaler.fit_transform(X)
+    lda = LinearDiscriminantAnalysis(n_components=1)
+    X_lda = lda.fit_transform(X, Y)
+    # print(X_lda)
+    print(lda.explained_variance_ratio_)
+    principalDf = pandas.DataFrame(data=X_lda, index=dataset.index
+                               , columns=['principal component 1'])
+    principalDf = principalDf.join(dataset["label"])
+    x = sns.heatmap(principalDf, vmin=0, vmax=1)
+    # sns.violinplot(x="label", y="principal component 1", data=principalDf)
+    plt.show()
+
+def pair_plot():
+    g = sns.pairplot(dataset, hue="label")
+    plt.show()
+
 def heat_map():
-    # dataset = dataset.drop('label', 1)
+    # dataset = dataset.drop('label', 1) ,cmap='cubehelix'
     corr = dataset.corr()
     fig = plt.figure(figsize=(15.0, 25.0))
     g=sns.heatmap(corr, 
                 xticklabels=corr.columns.values,
-                yticklabels=corr.columns.values, vmax=1, square=True,annot=True,cmap='cubehelix')
+                yticklabels=corr.columns.values, vmax=1, square=True,annot=True)
     #plt.yticks(rotation=30) 
     plt.xticks(rotation=40)
     plt.show()
@@ -41,6 +112,61 @@ def histos():
             plt.savefig("hists/hist_{}.png".format(cat))
             plt.gcf().clear()
             # plt.show()
+
+
+def probability_graphs():
+    x_label = [0.5, 0.6, 0.7, 0.8, 0.9]
+    knn = [0.832, 0.832, 0.842, 0.842, 0.89]
+    frorest = [0.865, 0.879, 0.898, 0.908, 0.914]
+    lightgbm = [0.868, 0.888, 0.902, 0.916, 0.919]
+    nn = [0.91, 0.911, 0.916, 0.922, 0.923]
+    fig, ax = plt.subplots()
+    ax.plot(x_label, knn, marker='o', color='b', label="knn")
+    ax.plot(x_label, frorest, marker='o', color='r', label="rforests")
+    ax.plot(x_label, lightgbm, marker='o', color='g', label="lightgbm")
+    ax.plot(x_label, nn, marker='o', color='y', label="nn")
+    ax.set(xlabel='probability threshold', ylabel='accuracy',
+           title='Effect of probability threshold for prediction')
+    ax.grid()
+    plt.legend(loc='best')
+    # fig.savefig("test.png")
+    plt.show()
+
+
+def non_zero_values():
+    data = {"related_searches": 151,
+            "full_path": 79608,
+            "part_path": 193005,
+            "about": 75518,
+            "deep_links": 106310,
+            "fresh": 95495,
+            "infection": 8084,
+            "pages": 252268,
+            "totalEstimatedMatches": 252268,
+            "someResultsRemoved": 67975}
+    fig, ax = plt.subplots()
+    y_pos= np.arange(len(data))
+    ax.barh(y_pos, list(data.values()), align='center', color='green', ecolor='black')
+    ax.set_yticks(y_pos)
+    ax.set_yticklabels(data.keys())
+    ax.invert_yaxis()  # labels read top-to-bottom
+    ax.set_xlabel('Count of non zero values')
+    plt.show()
+
+
+def non_zero_per_type():
+    keys = ["about", "someResultsRemoved", "full_path", "infection", "deep_links", "part_path", "related_searches",
+            "pages", "fresh", "totalEstimatedMatches"]
+    malicious = [1258, 9235, 5791, 2471, 1780, 9712, 151, 52710, 1111, 52710]
+    clean = [74285, 58769, 73845, 5615, 104570, 183376, 0, 199670, 94417, 199670]
+
+    malicious.extend(clean)
+    keys.extend(keys)
+    kind = ["malicious" if i < 10 else "clean" for i in range(20)]
+    df = pandas.DataFrame({"data": malicious, "features": keys, "label": kind})
+    plt.figure(figsize=(10, 6))
+    sns.barplot(x="features", hue="label", y="data", data=df).set_title("Count of non zero features per label")
+    plt.show()
 
 
 def total_est_mtach_hist():
@@ -72,6 +198,18 @@ def total_est_mtach_hist():
     plt.gcf().clear()
     # plt.show()
 
+
+def feature_pair_plot():
+    cols = ['part_path', 'fresh', 'pages', 'totalEstimatedMatches', "label"]
+    pp = sns.pairplot(data=dataset[cols],
+                      hue='label',
+                      size=1.8, aspect=1.8,
+                      palette={1: "#FF0000", 0: "#008000"},
+                      plot_kws=dict(edgecolor="black", linewidth=0.5))
+    fig = pp.fig
+    fig.subplots_adjust(top=0.93, wspace=0.3)
+    fig.suptitle('Wine Attributes Pairwise Plots', fontsize=14)
+    plt.show()
 
 def pairplot():
     fig = plt.figure(figsize=(25.0, 25.0))
@@ -161,7 +299,7 @@ def langugae_distribution():
     # sns.set(style="whitegrid")
     # ax=sns.barplot(x=langs, y=counts)
     # plt.show()
-from statistics import median
+
 
 def plot_coherence():
     coherence_values = [-4.797301092927819, -3.963008547611659, -4.972567367283015, -5.351131376341533,
@@ -192,5 +330,94 @@ def plot_coherence():
     # fig.savefig("test.png")
     plt.show()
 
+def plot_linear_reg():
+    X = 2 * np.random.rand(100, 1)
+    y = 4 + 3 * X + np.random.randn(100, 1)
+    from sklearn.linear_model import LinearRegression
+    lin_reg = LinearRegression()
+    lin_reg.fit(X, y)
+    X_new = np.array([[0], [2]])
+    y_predict = lin_reg.predict(X_new)
+    plt.plot(X_new, y_predict, "r-")
+    plt.plot(X, y, "b.")
+    plt.xlabel("x")
+    plt.ylabel("y")
+    plt.axis([0, 2, 0, 15])
+    plt.show()
 
+
+def logistic_reg():
+    trues = 2 * np.random.rand(100, 1)
+    falses = 4 + 3 * trues + np.random.randn(100, 1)
+    fig = plt.figure()
+    ax = fig.add_subplot(111)
+
+    no_of_preds = len(trues) + len(falses)
+
+    ax.scatter([i for i in range(len(trues))], trues, s=25, c='b', marker="o", label='Trues')
+    ax.scatter([i for i in range(len(falses))], falses, s=25, c='r', marker="s", label='Falses')
+
+    plt.legend(loc='upper right')
+    ax.set_title("Decision Boundary")
+    ax.set_xlabel('N/2')
+    ax.set_ylabel('Predicted Probability')
+    plt.axhline(5, color='black')
+    plt.show()
+
+def svm():
+    import numpy as np
+    import matplotlib.pyplot as plt
+    from sklearn import svm, datasets
+
+    # import some data to play with
+    iris = datasets.load_iris()
+    X = iris.data[:, :2]  # we only take the first two features. We could
+    # avoid this ugly slicing by using a two-dim dataset
+    y = iris.target
+
+    h = .02  # step size in the mesh
+
+    # we create an instance of SVM and fit out data. We do not scale our
+    # data since we want to plot the support vectors
+    C = 1.0  # SVM regularization parameter
+    poly_svc = svm.SVC(kernel='poly', degree=3, C=C).fit(X, y)
+    lin_svc = svm.LinearSVC(C=C).fit(X, y)
+
+    # create a mesh to plot in
+    x_min, x_max = X[:, 0].min() - 1, X[:, 0].max() + 1
+    y_min, y_max = X[:, 1].min() - 1, X[:, 1].max() + 1
+    xx, yy = np.meshgrid(np.arange(x_min, x_max, h),
+                         np.arange(y_min, y_max, h))
+
+    # title for the plots
+    titles = [
+              'LinearSVC (linear kernel)',
+
+              'SVC with polynomial (degree 3) kernel']
+
+    for i, clf in enumerate((lin_svc, poly_svc)):
+        # Plot the decision boundary. For that, we will assign a color to each
+        # point in the mesh [x_min, m_max]x[y_min, y_max].
+        plt.subplot(2, 1, i + 1)
+        plt.subplots_adjust(wspace=0.4, hspace=0.4)
+
+        Z = clf.predict(np.c_[xx.ravel(), yy.ravel()])
+
+        # Put the result into a color plot
+        Z = Z.reshape(xx.shape)
+        plt.contourf(xx, yy, Z, cmap=plt.cm.Paired, alpha=0.8)
+
+        # Plot also the training points
+        plt.scatter(X[:, 0], X[:, 1], c=y, cmap=plt.cm.Paired)
+        plt.xlabel('Sepal length')
+        plt.ylabel('Sepal width')
+        plt.xlim(xx.min(), xx.max())
+        plt.ylim(yy.min(), yy.max())
+        plt.xticks(())
+        plt.yticks(())
+        plt.title(titles[i])
+
+    plt.show()
+
+probability_graphs()
 # total_est_mtach_hist()

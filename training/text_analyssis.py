@@ -73,7 +73,7 @@ def plot_tfidf_classfeats_h(dfs, min_df):
     ''' Plot the data frames returned by the function plot_tfidf_classfeats(). '''
     fig = plt.figure(figsize=(12, 9), facecolor="w")
     x = np.arange(len(dfs[0]))
-    transaltion = {"0": "čisté", "1": "škodlivé"}
+    transaltion = {"0": "clean", "1": "malicious"}
     for i, df in enumerate(dfs):
         ax = fig.add_subplot(1, len(dfs), i + 1)
         ax.spines["top"].set_visible(False)
@@ -81,25 +81,28 @@ def plot_tfidf_classfeats_h(dfs, min_df):
         ax.set_frame_on(False)
         ax.get_xaxis().tick_bottom()
         ax.get_yaxis().tick_left()
-        ax.set_xlabel("Průměrné Tf-Idf Skore pro {}% minimum".format(min_df), labelpad=16, fontsize=14)
-        ax.set_title(transaltion[str(df.label)], fontsize=16)
+        #ax.set_xlabel("Průměrné Tf-Idf Skore pro {}% minimum".format(min_df), labelpad=16, fontsize=14)
+        ax.set_xlabel(transaltion[str(df.label)], fontsize=16)
         ax.ticklabel_format(axis='x', style='sci', scilimits=(-2, 2))
         ax.barh(x, df.tfidf, align='center', color='#3F5D7D')
         ax.set_yticks(x)
         ax.set_ylim([-1, x[-1] + 1])
         yticks = ax.set_yticklabels(df.feature)
         plt.subplots_adjust(bottom=0.09, right=0.97, left=0.15, top=0.95, wspace=0.52)
+    fig.suptitle("Average Tf-Idf score for {}% minimum document frequency".format(min_df), fontsize=14)
     plt.savefig("tfidf_{}.png".format(min_df))
     # plt.show()
 
 
-for i in range(1, 6):
-    tfidf = pickle.load(open("splitted_text/tf_idf/tf_idf_{}.pkl".format(i), "rb"))
+for i in [2, 5]:
+    tfidf = pickle.load(open("splitted_text/tf_idf/tfidf_{}.pkl".format(i), "rb"))
     features = tfidf.transform(dataset.text)
     features_names = tfidf.get_feature_names()
     top_feats = top_feats_by_class(features, labels, features_names)
-    print(top_feats)
+    # print(top_feats)
     plot_tfidf_classfeats_h(top_feats, i)
+    print("done")
+    tfidf, features_names, top_feats = None, None, None
 # print(top_feats_in_doc(features, features_names, 42))
 # print(top_mean_feats(features,features_names))
 # print(top_feats_by_class(features, labels, features_names))
