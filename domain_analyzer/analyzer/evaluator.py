@@ -18,7 +18,6 @@ class Evaluator:
         self.prepare_results()
 
     def scale_data(self, data: list) -> list:
-        # scaler = pickle.load(open("{}scaler.pkl".format(self.model_path), "rb"))
         return self.scaler.transform(data)
 
     def prepare_results(self):
@@ -50,15 +49,12 @@ class Evaluator:
 
     def predict_nn(self) -> list:
         try:
-            # nn = load_model("{}dense_model.h5".format(self.model_path))
             prediction = self.dense_model.predict(self.data)[0][0]
         except Exception as e:
             self.logger.warning("Failed to predict with nn, {}".format(e))
         else:
             return [int(prediction > 0.5), float(prediction)]
 
-    # {"knn": self.knn, "linearsvc": self.linearsvc, "lightgbm": self.lightgbm,
-    #  "rforest": self.rforrest}.items()
 
     def predict_label(self):
         results = []

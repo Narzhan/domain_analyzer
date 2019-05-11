@@ -1,9 +1,7 @@
 import json
-import os
 import re
 
 import falcon
-import redis
 # from main import app as celery_app
 # from main import predict_domain
 from analyzer.tools import build_logger
@@ -13,38 +11,12 @@ from main import DomainAnalyzer
 
 class Predict:
     def __init__(self):
-        # self.result_connection = redis.Redis(os.environ["REDIS_RESULTS"], port=6379,
-        #                                      db=os.environ["REDIS_DB"])
-        # self.analysis_connection = redis.Redis(os.environ["REDIS_ANALYSIS"], port=6379,
-        #                                        db=os.environ["REDIS_DB_ANALYSIS"])
         self.logger = build_logger("api", "/opt/domain_analyzer/logs/")
         self.domain_pattern = re.compile("(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z0-9][a-z0-9-]{0,61}[a-z]")
         self.cache = CacheConnector()
 
-    # def fetch_result(self, domain: str) -> dict:
-    #     try:
-    #         domain_analysis = json.loads(self.result_connection.get(domain).decode("utf-8", errors="ignore"))
-    #         domain_analysis.update({"domain": domain})
-    #         return domain_analysis
-    #     except Exception as e:
-    #         self.logger.warning("Failed to get cached results, {}".format(e))
-    #         return {"status": "Cache error with domain {}".format(domain)}
-    #
-    # def check_cache(self, connection, domain) -> bool:
-    #     try:
-    #         return True if connection.exists(domain) else False
-    #     except Exception as e:
-    #         self.logger.warning("Failed to get analysis status, {}".format(e))
-    #         return False
-
     def validate_input(self, domain: str) -> bool:
         return True if self.domain_pattern.match(domain) else False
-
-    # def analysis_created(self, domain: str):
-    #     try:
-    #         self.analysis_connection.set(domain, "running", 300)
-    #     except Exception as e:
-    #         self.logger.warning("Failed to create analysis status, {}".format(e))
 
     def create_task(self, domain: str):
         DomainAnalyzer().delay(domain)

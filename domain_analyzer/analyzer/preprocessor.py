@@ -36,8 +36,6 @@ class Preprocessor:
         self.tokenizer = tokenizer
         self.we_model = we_model
         self.ensamble_we = ensamble_we
-        # self.we_model = load_model("/opt/domain_analyzer/analyzer/models/we_model.h5")
-        # self.graph = graph
 
     def fetch_data(self):
         params = {"q": self.domain, "textDecorations": False}
@@ -173,5 +171,3 @@ class Preprocessor:
         processed_metadata.extend(processed_text)
         self.result_logger.info("{} - {}".format(self.domain, processed_metadata))
         return [processed_metadata]
-
-# model.predict([[7, 6, 8, 234000000, 0.0, 0.0, 0.0]])

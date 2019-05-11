@@ -1,11 +1,5 @@
-# from __future__ import absolute_import
 
-import json
-# import multiprocessing
 import os
-# from datetime import datetime
-#
-# import redis
 from analyzer.evaluator import Evaluator
 from analyzer.exc import FetchException, PreprocessException
 from analyzer.preprocessor import Preprocessor
@@ -15,7 +9,6 @@ from celery import Celery, states
 from celery import Task
 
 
-# multiprocessing.set_start_method('spawn', force=True)
 
 
 class DomainAnalyzer(Task):
@@ -27,8 +20,6 @@ class DomainAnalyzer(Task):
     def __init__(self):
         self.logger = build_logger("main_worker", "/opt/domain_analyzer/logs/")
         self.cache = CacheConnector()
-        # self.connection = redis.Redis(os.environ["REDIS_RESULTS"], port=6379, db=os.environ["REDIS_DB"])
-        # self.result_connection = redis.Redis(os.environ["REDIS_ANALYSIS"], port=6379, db=os.environ["REDIS_DB_ANALYSIS"])
         if os.environ["MODE"] == "domain_analyzer":
             self.load_models()
 
@@ -36,8 +27,6 @@ class DomainAnalyzer(Task):
         from keras.models import load_model
         import gensim, pickle
         base_path = "/opt/domain_analyzer/analyzer/models/"
-        # self.we_model._make_predict_function()
-        # self.graph = tf.get_default_graph()
         self.tf_idf = pickle.load(open("{}tf_idf.pkl".format(base_path), "rb"))
         self.ensamble_tf_idf = pickle.load(open("{}ensamble_tf_idf.pkl".format(base_path), "rb"))
         self.lda_dictionary = gensim.corpora.Dictionary.load("{}lda_dictionary.pkl".format(base_path))
@@ -51,28 +40,6 @@ class DomainAnalyzer(Task):
         self.knn = pickle.load(open("{}knn.pkl".format(base_path), "rb"))
         self.linearsvc = pickle.load(open("{}linearsvc.pkl".format(base_path), "rb"))
         self.rforest = pickle.load(open("{}rforest.pkl".format(base_path), "rb"))
-        # self.lightgbm = pickle.load(open("{}lightgbm.pkl".format(base_path), "rb"))
-
-    # def create_date(self):
-    #     try:
-    #         return datetime.now().strftime("%Y-%m-%dT%H:%M:%SZ")
-    #     except Exception:
-    #         return "unknown"
-    #
-    # def persist_result(self, domain, result: list):
-    #     try:
-    #         self.connection.set(domain,
-    #                             json.dumps(
-    #                                 {"prediction": result[0], "probability": result[1], "created": self.create_date()}),
-    #                             int(os.environ["RECORD_TTL"]))
-    #     except Exception as e:
-    #         self.logger.warning("Failed to persist results to Redis, {}".format(e))
-    #
-    # def analysis_done(self, domain: str):
-    #     try:
-    #         self.result_connection.delete(domain)
-    #     except Exception as e:
-    #         self.logger.warning("Failed to free domain from processing queue, {}".format(e))
 
     def run(self, domain):
         enrichers = []
@@ -96,12 +63,14 @@ class DomainAnalyzer(Task):
             if self.request.retries < 6:
                 self.retry(args=(domain))
         except PreprocessException as pe:
+            self.cache.finish_analysis(domain)
             self.logger.warning(pe)
             self.update_state(
                 state=states.FAILURE,
                 meta="Preprocessor failed {}".format(pe)
             )
         except Exception as e:
+            self.cache.finish_analysis(domain)
             self.logger.warning("General failure during analysis, {}".format(e))
             self.update_state(
                 state=states.FAILURE,
@@ -112,15 +81,5 @@ class DomainAnalyzer(Task):
 app = Celery('oraculum', broker=os.environ.get("CELERY_BROKER"))
 app.register_task(DomainAnalyzer())
 
-#
-# @app.task(bind=True, max_retries=6, retry_backoff=300)
-# def predict_domain(self, domain: id):
-#     """
-#     Main execution method.
-#     """
-#     logger = logging.getLogger("main")
-
-
 if __name__ == '__main__':
-    # env_variable_validation()
     app.start()
