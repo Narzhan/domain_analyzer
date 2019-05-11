@@ -18,9 +18,19 @@ class Evaluator:
         self.prepare_results()
 
     def scale_data(self, data: list) -> list:
+        """
+            Scale the input data using the loaded model
+        :param
+            data: input features
+        :return:
+            list, scaled input features
+        """
         return self.scaler.transform(data)
 
     def prepare_results(self):
+        """
+            Create file for the prediction result and create it's header
+        """
         try:
             if not os.path.exists("/opt/domain_analyzer/logs/results.csv"):
                 with open("/opt/domain_analyzer/logs/results.csv", "w") as file:
@@ -29,6 +39,9 @@ class Evaluator:
             self.logger.info("Failed to create test file, {}".format(e))
 
     def persist_results(self, results: list):
+        """
+            Persist prediction result for future analysis
+        """
         try:
             with open("/opt/domain_analyzer/logs/results.csv", "a") as file:
                 file.write("{},{}\n".format(self.domain, ",".join(str(result) for result in results)))
@@ -36,6 +49,11 @@ class Evaluator:
             self.logger.info("Failed to append to test file, {}".format(e))
 
     def predict_domain(self, model_name: str, classifier) -> list:
+        """
+            Get predictions using a model
+        :return:
+            list, prediction and probability from all expept liner cvm model
+        """
         try:
             if classifier is None:
                 classifier = pickle.load(open("{}{}.pkl".format(self.model_path, model_name), "rb"))
@@ -48,6 +66,11 @@ class Evaluator:
             return [prediction]
 
     def predict_nn(self) -> list:
+        """
+            Get predictions using a dense nn
+        :return:
+            list, prediction and probability
+        """
         try:
             prediction = self.dense_model.predict(self.data)[0][0]
         except Exception as e:
@@ -55,8 +78,12 @@ class Evaluator:
         else:
             return [int(prediction > 0.5), float(prediction)]
 
-
     def predict_label(self):
+        """
+            Get prediction for queried data
+        :return:
+            list, prediction and prediction probability
+        """
         results = []
         for model_name, model in {"knn": self.knn, "linearsvc": self.linearsvc, "lightgbm": None,
                            "rforest": self.rforrest}.items():

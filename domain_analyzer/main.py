@@ -1,4 +1,3 @@
-
 import os
 from analyzer.evaluator import Evaluator
 from analyzer.exc import FetchException, PreprocessException
@@ -9,11 +8,10 @@ from celery import Celery, states
 from celery import Task
 
 
-
-
 class DomainAnalyzer(Task):
     ignore_result = True
     name = "main.DomainAnalyzer"
+
     # max_retries = 6
     # retry_backoff = 300
 
@@ -24,6 +22,10 @@ class DomainAnalyzer(Task):
             self.load_models()
 
     def load_models(self):
+        """
+            Load pretrained models which should be passed as reference
+        :return:
+        """
         from keras.models import load_model
         import gensim, pickle
         base_path = "/opt/domain_analyzer/analyzer/models/"
@@ -42,6 +44,11 @@ class DomainAnalyzer(Task):
         self.rforest = pickle.load(open("{}rforest.pkl".format(base_path), "rb"))
 
     def run(self, domain):
+        """
+            Main celery worker which analysses the domain
+        :param
+         domain: str, domain to be queried
+        """
         enrichers = []
         try:
             preprocessor = Preprocessor(domain, self.tf_idf, self.ensamble_tf_idf, self.lda_dictionary, self.lda_model,
