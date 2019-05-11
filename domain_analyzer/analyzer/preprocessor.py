@@ -147,8 +147,8 @@ class Preprocessor:
         """
         padded_texts = pad_sequences(self.tokenizer.texts_to_sequences(texts), maxlen=134)
         predictions = self.we_model.predict(padded_texts)
-        features = [list(map(lambda x: 1 if x > 0.5 else 0, predictions))]
-        return self.ensamble_we.predict(features)[0]
+        # features = [list(map(lambda x: 1 if x > 0.5 else 0, predictions))]
+        return self.ensamble_we.predict(predictions)[0]
 
     def process_text(self, texts: list) -> list:
         """
