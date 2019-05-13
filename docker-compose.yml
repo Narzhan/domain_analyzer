@@ -1,7 +1,7 @@
 version: '2'
 services:
   api:
-    image: narzhan/domain-analyzer:1.1
+    image: narzhan/domain-analyzer:1.2
     stdin_open: true
     logging:
       driver: json-file
@@ -18,7 +18,7 @@ services:
       ANALYSIS_DB: "4"
     tty: true
   domain_analyzer:
-    image: narzhan/domain-analyzer:1.1
+    image: narzhan/domain-analyzer:1.2
     environment:
         CELERY_BROKER: "redis://localhost:6379/3"
         MODE: "domain_analyzer"
