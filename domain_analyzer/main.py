@@ -1,4 +1,5 @@
 import os
+import traceback
 from analyzer.evaluator import Evaluator
 from analyzer.exc import FetchException, PreprocessException
 from analyzer.preprocessor import Preprocessor
@@ -79,6 +80,7 @@ class DomainAnalyzer(Task):
         except Exception as e:
             self.cache.finish_analysis(domain)
             self.logger.warning("General failure during analysis, {}".format(e))
+            logger.warning("{}".format(traceback.format_exc()))
             self.update_state(
                 state=states.FAILURE,
                 meta=e
