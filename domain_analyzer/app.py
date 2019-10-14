@@ -12,7 +12,7 @@ from main import DomainAnalyzer
 class Predict:
     def __init__(self):
         self.logger = build_logger("api", "/opt/domain_analyzer/logs/")
-        self.domain_pattern = re.compile("(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z0-9][a-z0-9-]{0,61}[a-z]")
+        self.domain_pattern = re.compile("^(?=.*[^\.]$)((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.?){4}$")
         self.cache = CacheConnector()
 
     def validate_input(self, domain: str) -> bool:
