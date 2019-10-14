@@ -93,7 +93,7 @@ class Evaluator:
                 prediction = self.predict_domain(model_name, model)
                 results.extend(prediction)
         results.extend(self.predict_nn())
-        self.logger.info("{} - {}".format(self.domain, results))
+        # self.logger.info("{} - {}".format(self.domain, results))
         self.persist_results(results)
         if "prediction" in locals():
             return prediction

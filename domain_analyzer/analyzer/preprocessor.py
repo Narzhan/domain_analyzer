@@ -253,5 +253,5 @@ class Preprocessor:
             processed_metadata, texts = [0, 0, 0, 0], []
         processed_text = self.process_text(texts)
         processed_metadata.extend(processed_text)
-        self.result_logger.info("{} - {}".format(self.domain, processed_metadata))
+        self.result_logger.info("{},{}".format(self.domain, processed_metadata))
         return [processed_metadata]
