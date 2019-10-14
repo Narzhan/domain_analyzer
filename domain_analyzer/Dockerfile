@@ -4,7 +4,7 @@ MAINTAINER Václav Brůžek <vaclav.bruzek@whalebone.io>
 RUN apt-get update -y && \
     apt-get install -y python3-pip nano
 
-RUN pip3 --no-cache-dir install requests gunicorn celery falcon redis scikit-learn==0.20.0 keras theano pandas gensim tld h5py nltk lightgbm
+RUN pip3 --no-cache-dir install requests gunicorn celery falcon redis "scikit-learn==0.20.0" keras theano pandas gensim tld h5py nltk lightgbm
 
 RUN mkdir -p /opt/domain_analyzer/logs/
 WORKDIR /opt/domain_analyzer/
