@@ -1,5 +1,6 @@
 import os
 import pickle
+import warnings
 
 from .tools import build_logger
 
@@ -16,6 +17,8 @@ class Evaluator:
         self.rforrest = rforrest
         self.data = self.scale_data(data)
         self.prepare_results()
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
 
     def scale_data(self, data: list) -> list:
         """
