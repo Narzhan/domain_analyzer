@@ -8,11 +8,11 @@ from analyzer.tools import build_logger
 from analyzer.cache import CacheConnector
 from main import DomainAnalyzer
 
-
+# ^(?=.*[^\.]$)((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.?){4}$
 class Predict:
     def __init__(self):
         self.logger = build_logger("api", "/opt/domain_analyzer/logs/")
-        self.domain_pattern = re.compile("^(?=.*[^\.]$)((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.?){4}$")
+        self.domain_pattern = re.compile("(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z0-9][a-z0-9-]{0,61}[a-z]")
         self.cache = CacheConnector()
 
     def validate_input(self, domain: str) -> bool:
