@@ -3,7 +3,7 @@ import os
 import random
 from datetime import datetime, timedelta
 
-from .exc import PreprocessException, FetchException
+from .exc import PreprocessException, FetchException, NoDataException
 from .tools import build_logger
 
 if os.environ["MODE"] == "domain_analyzer":
@@ -60,7 +60,7 @@ class Preprocessor:
                     return data
                 else:
                     self.logger.warning("No data from api, following response: {}".format(data))
-                    raise FetchException("No data from api, following response: {}".format(data))
+                    raise NoDataException("No data from api, following response: {}".format(data))
 
     def dry_run(self) -> dict:
         """

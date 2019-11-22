@@ -1,7 +1,7 @@
 import os
 import traceback
 from analyzer.evaluator import Evaluator
-from analyzer.exc import FetchException, PreprocessException
+from analyzer.exc import FetchException, PreprocessException, NoDataException
 from analyzer.preprocessor import Preprocessor
 from analyzer.tools import build_logger
 from analyzer.cache import CacheConnector
@@ -77,10 +77,13 @@ class DomainAnalyzer(Task):
                 state=states.FAILURE,
                 meta="Preprocessor failed {}".format(pe)
             )
+        except NoDataException:
+            self.cache.finish_analysis(domain)
+            return "No data found"
         except Exception as e:
             self.cache.finish_analysis(domain)
             self.logger.warning("General failure during analysis, {}".format(e))
-            logger.warning("{}".format(traceback.format_exc()))
+            self.logger.warning("{}".format(traceback.format_exc()))
             self.update_state(
                 state=states.FAILURE,
                 meta=e
