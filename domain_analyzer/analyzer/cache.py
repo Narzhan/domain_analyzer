@@ -10,9 +10,9 @@ class CacheConnector:
 
     def __init__(self):
         self.result_connection = redis.Redis(os.environ["CACHE_RESULTS"], port=6379,
-                                             db=os.environ["RESULTS_DB"])
+                                             db=int(os.environ["RESULTS_DB"]))
         self.analysis_connection = redis.Redis(os.environ["CACHE_ANALYSIS"], port=6379,
-                                               db=os.environ["ANALYSIS_DB"])
+                                               db=int(os.environ["ANALYSIS_DB"]))
         self.logger = build_logger("cache", "/opt/domain_analyzer/logs/")
 
     def fetch_result(self, domain: str) -> dict:
@@ -31,7 +31,7 @@ class CacheConnector:
             self.logger.warning("Failed to get cached results, {}".format(e))
             return {"status": "Cache error with domain {}".format(domain)}
 
-    def push_result(self, domain: str, result: list):
+    def push_result(self, domain: str, result: int):
         """
             Save analysis result to cache
         :params
@@ -40,9 +40,8 @@ class CacheConnector:
         """
         try:
             self.result_connection.set(domain,
-                                json.dumps(
-                                    {"prediction": result[0], "probability": result[1], "created": self.create_date()}),
-                                int(os.environ["RECORD_TTL"]))
+                                       json.dumps({"prediction": result, "created": self.create_date()}),
+                                       int(os.environ["RECORD_TTL"]))
         except Exception as e:
             self.logger.warning("Failed to persist results to cache for domain {}, {}".format(domain, e))
 

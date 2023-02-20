@@ -6,7 +6,8 @@ import falcon
 # from main import predict_domain
 from analyzer.tools import build_logger
 from analyzer.cache import CacheConnector
-from main import DomainAnalyzer
+# from main import DomainAnalyzer
+from scheduler import predict_domain
 
 # ^(?=.*[^\.]$)((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.?){4}$
 class Predict:
@@ -15,11 +16,12 @@ class Predict:
         self.domain_pattern = re.compile("(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z0-9][a-z0-9-]{0,61}[a-z]")
         self.cache = CacheConnector()
 
-    def validate_input(self, domain: str) -> bool:
-        return True if self.domain_pattern.match(domain) else False
+    # def validate_input(self, domain: str) -> bool:
+    #     return True if self.domain_pattern.match(domain) else False
 
     def create_task(self, domain: str):
-        DomainAnalyzer().delay(domain)
+        # DomainAnalyzer().delay(domain)
+        predict_domain.delay(domain)
         self.cache.create_analysis(domain)
         return {"status": "Analysis submitted"}, falcon.HTTP_201
 
@@ -36,12 +38,12 @@ class Predict:
 
     def on_post(self, req, resp):
         try:
-            analysis = json.loads(req.stream.read(req.content_length or 0).decode("utf-8"))
+            analysis = json.loads(req.stream.read().decode("utf-8"))
         except json.JSONDecodeError as de:
             resp.status = falcon.HTTP_400
             resp.media = {"error": "incorrect json format, {}".format(de)}
         else:
-            if self.validate_input(analysis["domain"]):
+            if self.domain_pattern.match(analysis["domain"]):
                 try:
                     status, response_code = self.handle_request(analysis)
                 except Exception as e:
@@ -61,6 +63,6 @@ class Healthcheck(object):
         resp.media = {"status": "ok"}
 
 
-app = falcon.API()
+app = falcon.App()
 app.add_route("/predict", Predict())
 app.add_route("/status", Healthcheck())

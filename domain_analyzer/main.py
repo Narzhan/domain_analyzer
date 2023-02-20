@@ -27,22 +27,15 @@ class DomainAnalyzer(Task):
             Load pretrained models which should be passed as reference
         :return:
         """
-        from keras.models import load_model
-        import gensim, pickle
+        import tensorflow as tf
+        import pickle
         base_path = "/opt/domain_analyzer/analyzer/models/"
-        self.tf_idf = pickle.load(open("{}tf_idf.pkl".format(base_path), "rb"))
-        self.ensamble_tf_idf = pickle.load(open("{}ensamble_tf_idf.pkl".format(base_path), "rb"))
-        self.lda_dictionary = gensim.corpora.Dictionary.load("{}lda_dictionary.pkl".format(base_path))
-        self.lda_model = gensim.models.LdaMulticore.load("{}lda_model.pkl".format(base_path))
-        self.ensamble_lda = pickle.load(open("{}ensamble_lda.pkl".format(base_path), "rb"))
+        self.ensemble = pickle.load(open("{}ensemble_model_v2.pkl".format(base_path), "rb"))
+        self.ensemble_scaler = pickle.load(open("{}ensemble_scaler_v2.pkl".format(base_path), "rb"))
+        self.similarity_model = pickle.load(open("{}gb_similarity.pkl".format(base_path), "rb"))
         self.tokenizer = pickle.load(open("{}tokenizer.pkl".format(base_path), "rb"))
-        self.ensamble_we = pickle.load(open("{}ensamble_we.pkl".format(base_path), "rb"))
-        self.we_model = load_model("{}we_model.h5".format(base_path))
-        self.scaler = pickle.load(open("{}scaler.pkl".format(base_path), "rb"))
-        self.dense_model = load_model("{}dense_model.h5".format(base_path))
-        self.knn = pickle.load(open("{}knn.pkl".format(base_path), "rb"))
-        self.linearsvc = pickle.load(open("{}linearsvc.pkl".format(base_path), "rb"))
-        self.rforest = pickle.load(open("{}rforest.pkl".format(base_path), "rb"))
+        self.cnn_blackbox = tf.keras.models.load_model("{}domains_blackbox_no_embedding_v2.h5".format(base_path))
+        self.cnn_texts = tf.keras.models.load_model("{}texts_we_glove_cnn_v3.h5".format(base_path))
 
     def run(self, domain):
         """
@@ -50,16 +43,11 @@ class DomainAnalyzer(Task):
         :param
          domain: str, domain to be queried
         """
-        enrichers = []
+        # enrichers = []
         try:
-            preprocessor = Preprocessor(domain, self.tf_idf, self.ensamble_tf_idf, self.lda_dictionary, self.lda_model,
-                                        self.ensamble_lda, self.tokenizer, self.ensamble_we, self.we_model)
+            preprocessor = Preprocessor(domain, self.similarity_model, self.cnn_blackbox, self.cnn_texts, self.tokenizer)
             domain_data = preprocessor.prepare_data()
-            if len(enrichers) > 0:
-                for enricher in enrichers:
-                    domain_data[0].append(enricher.enrich(domain))
-            evaluator = Evaluator(domain_data, domain, self.scaler, self.dense_model, self.knn, self.linearsvc,
-                                  self.rforest)
+            evaluator = Evaluator(domain_data, domain, self.ensemble_scaler, self.ensemble)
             result = evaluator.predict_label()
             if result:
                 self.cache.push_result(domain, result)

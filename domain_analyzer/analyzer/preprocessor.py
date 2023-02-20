@@ -1,41 +1,43 @@
 import json
 import os
 import random
+import re
+import requests
+import string
+from typing import Tuple
 from datetime import datetime, timedelta
-
+from math import sqrt
+from urllib.parse import urlparse
 from .exc import PreprocessException, FetchException, NoDataException
 from .tools import build_logger
 
 if os.environ["MODE"] == "domain_analyzer":
-    import requests
+    import tensorflow as tf
     from keras.preprocessing.sequence import pad_sequences
-    from nltk.stem import WordNetLemmatizer, SnowballStemmer
-    from tld import get_tld
-    import gensim
-    import nltk
-    nltk.download('wordnet')
+    from numpy import array
+    from gensim.parsing.preprocessing import remove_stopwords
 
 
 class Preprocessor:
+    charmap: dict = {c: i for i, c in enumerate('$' + string.ascii_lowercase + string.digits + '-_.')}
+    max_domains: int = 60
+    max_texts: int = 60
+    max_text_length: int = 25
+    max_domains_similarity: int = 20
+    max_domain_length: int = 64
+    punctuations: str = r'''!()-—+_•[]{};:'"\,<>=·./?@#$%^&*_~'''
+    nn_prob_threshold: float = 0.5
+    base_path = "/opt/domain_analyzer/analyzer/models/"
 
-    def __init__(self, domain: str, tf_idf, ensamble_tf_idf, lda_dictionary, lda_model, ensamble_lda,
-                 tokenizer, ensamble_we, we_model):
+    def __init__(self, domain: str, similarity_model, tokenizer):
         self.domain = domain
         self.logger = build_logger("preprocessor", "/opt/domain_analyzer/logs/")
         self.result_logger = build_logger("results", "/opt/domain_analyzer/logs/")
-        self.stemmer = SnowballStemmer('english')
-        try:
-            self.mode = os.environ["ERROR_MODE"]
-        except KeyError:
-            self.mode = "relaxed"
-        self.tf_idf = tf_idf
-        self.ensamble_tf_idf = ensamble_tf_idf
-        self.lda_dictionary = lda_dictionary
-        self.lda_model = lda_model
-        self.ensamble_lda = ensamble_lda
+        self.nn_prob_logger = build_logger("nn_prob", "/opt/domain_analyzer/logs/")
+        self.similarity_model = similarity_model
+        self.cnn_blackbox = tf.keras.models.load_model("{}domains_blackbox_no_embedding_v2.h5".format(self.base_path))
+        self.cnn_texts = tf.keras.models.load_model("{}texts_we_glove_cnn_v3.h5".format(self.base_path))
         self.tokenizer = tokenizer
-        self.we_model = we_model
-        self.ensamble_we = ensamble_we
 
     def fetch_data(self):
         """
@@ -43,24 +45,26 @@ class Preprocessor:
         :return:
             dict, representation of returned data from analysed domain
         """
-        params = {"q": self.domain, "textDecorations": False}
-        headers = {"Ocp-Apim-Subscription-Key": os.environ["BING_API_KEY"]}
+        data = {"target": "google_search", "query": f"\"{self.domain}\"",
+                  "parse": True, "locale": "en-GB", "num_pages": 100,
+                  "google_results_language": "en", "geo": "Prague"
+                  }
+        headers = {"Accept": "application/json", "Content-Type": "application/json"}
         try:
-            response = requests.get("https://api.cognitive.microsoft.com/bing/v7.0/search", headers=headers,
-                                    params=params)
+            response = requests.post("https://scrape.smartproxy.com/v1/tasks", headers=headers,
+                                     json=data, auth=(os.environ["SCRAPER_LOGIN"], os.environ["SCRAPER_PASSWORD"]))
         except requests.exceptions.RequestException as e:
             self.logger.warning("Failed to download data for domain {}, {}".format(self.domain, e))
             raise FetchException("Failed to download data for domain {}, {}".format(self.domain, e))
         else:
             if response.ok:
                 data = response.json()
-                if "_type" in data and data["_type"] == "SearchResponse":
-                    if "PERSIST_DATA" in os.environ and os.environ["PERSIST_DATA"] == "true":
-                        self.persist_data(data)
-                    return data
-                else:
-                    self.logger.warning("No data from api, following response: {}".format(data))
-                    raise NoDataException("No data from api, following response: {}".format(data))
+                if os.environ.get("PERSIST_DATA", "true") == "true":
+                    self.persist_data(data)
+                return data
+            else:
+                self.logger.warning("Failed to download data for {}, {}: {}".format(self.domain, response.status_code,
+                                                                                    response.content))
 
     def dry_run(self) -> dict:
         """
@@ -79,163 +83,102 @@ class Preprocessor:
         :param
             data: dict, data to be saved
         """
-        try:
-            os.mkdir("/opt/domain_analyzer/data/")
-        except Exception:
-            pass
         with open("/opt/domain_analyzer/data/{}.json".format(self.domain), "w") as out_file:
             json.dump(data, out_file)
 
-    def lemmatize_stemming(self, text):
-        """
-            Preprocess text sample using lematiaztion and stemming
-        :param
-            text: sample
-        :return:
-            str, returned preprocessed text
-        """
-        return self.stemmer.stem(WordNetLemmatizer().lemmatize(text, pos='v'))
+    def squared_sum(self, x):
+        return round(sqrt(sum([a * a for a in x])), 3)
 
-    def text_preprocess(self, text) -> list:
-        """
-            Helper method for preprocessing text
-        :param
-            text: list, texts whihc should be preprocessed
-        :return:
-            list, preprocessed texts
-        """
-        result = []
-        for token in gensim.utils.simple_preprocess(text):
-            if token not in gensim.parsing.preprocessing.STOPWORDS and len(token) > 3:
-                result.append(self.lemmatize_stemming(token))
-        return result
+    def cos_similarity(self, x, y):
+        numerator = sum(a * b for a, b in zip(x, y))
+        denominator = self.squared_sum(x) * self.squared_sum(y)
+        return round(numerator / float(denominator), 3)
 
-    def tfidf_analysis(self, texts: list) -> int:
-        """
-            Get analysis for text using TF-IDF model
-        :param
-            texts: list, texts to analyse
-        :return:
-            int, prediction
-        """
-        features = self.tf_idf.transform(texts)
-        features = [features.toarray().flatten()]
-        return self.ensamble_tf_idf.predict(features)[0]
+    def tokenize(self, domain: str) -> list:
+        return [self.charmap[c] for c in domain.lower().split(":")[0] if c in self.charmap]
 
-    def topics_analysis(self, texts: list) -> int:
-        """
-            Get analysis for text using LDA model
-        :param
-            texts: list, texts to analyse
-        :return:
-            int, prediction
-        """
-        texts = list(map(self.text_preprocess, texts))
-        bowed_texts = [self.lda_dictionary.doc2bow(doc) for doc in texts]
-        features = [
-            [max(doc_topics, key=lambda value: value[1])[0] if len(doc_topics) > 0 else 420 for doc_topics in
-             self.lda_model.get_document_topics(bowed_texts)]]
-        return self.ensamble_lda.predict(features)[0]
-
-    def we_analysis(self, texts: list) -> int:
-        """
-            Get analysis for text using word embeddings model
-        :param
-            texts: list, texts to analyse
-        :return:
-            int, prediction
-        """
-        padded_texts = pad_sequences(self.tokenizer.texts_to_sequences(texts), maxlen=134)
-        predictions = self.we_model.predict(padded_texts)
-        # features = [list(map(lambda x: 1 if x > 0.5 else 0, predictions))]
-        return self.ensamble_we.predict(predictions.transpose())[0]
-
-    def process_text(self, texts: list) -> list:
-        """
-            Pre-process text snippets and analyse them using models for text
-        :param
-            texts: list, texts of all snippets for target domain
-        :return:
-            list, preprocessed texts of equal length
-        """
-        while len(texts) < 10:
-            texts.append("")
-        text_features = []
-        for method in [self.tfidf_analysis, self.topics_analysis, self.we_analysis]:
+    def similarity_preprocess(self, domains: list):
+        source_vector = self.tokenize(self.domain)
+        if domains:
+            # x_data = []
+            # for domain in domains:
+            #     try:
+            #         x_data.append(self.cos_similarity(source_vector, self.tokenize(domain)))
+            #     except Exception as e:
+            #         self.logger.warning("Failed to process data for {}: {}.".format(self.domain, e))
+            #         raise Exception
+            #     if len(x_data) >= self.max_domains_similarity:
+            #         break
+            checked_domains = [d for i, d in enumerate(domains) if d and i < self.max_domains_similarity]
             try:
-                text_features.append(method(texts))
-            except Exception as me:
-                self.logger.info(
-                    "Failed to execute text method {} for domain {} with error {}".format(method.__name__, self.domain,
-                                                                                          me))
-                if self.mode == "relaxed":
-                    text_features.append(2)
-                else:
-                    raise PreprocessException(
-                        "Failed to execute text method {} for domain {} with error {}".format(method.__name__,
-                                                                                              self.domain,
-                                                                                              me))
-        return text_features
-
-    def parse_domain(self, url: str):
-        """
-            Parse url to get the doamin
-        :param
-            url:  str, url to prase
-        :return:
-            domain tld
-        """
-        try:
-            domain_tld = get_tld(url, as_object=True, fix_protocol=True)
-        except Exception as de:
-            self.logger.info("Failed to parse domain {}, {}".format(self.domain, de))
-        else:
-            return domain_tld
-
-    def check_freshness(self, date: str) -> bool:
-        """
-            Check whether the domain awas crawled in past seven days
-        :param
-            date: str, date last crawled
-        :return:
-            bool, True if yes False otherwise
-        """
-        if datetime.now() - datetime.strptime(date.split("T")[0], "%Y-%m-%d") < timedelta(days=7):
-            return True
-        else:
-            return False
-
-    def process_metadata(self, metadata: dict):
-        """
-            Create meta-data features and get text from given search engine data
-        :param
-            metadata: dict, search results from searhc engine
-        :return:
-            list, meta-data features
-            list, text samples to be further preprocessed
-        """
-        try:
-            pages = len(metadata["value"])
-            matches = metadata['totalEstimatedMatches']
-        except Exception as e:
-            self.logger.info("Failed to get domain information, {}".format(e))
-            pages = 0 if "pages" not in locals() else pages
-            matches = 0 if "matches" not in locals() else matches
-        texts = []
-        fresh, part_path = 0, 0
-        domain_tld = self.parse_domain(self.domain)
-        for page in metadata["value"]:
-            try:
-                texts.append(page["snippet"])
-                url_tld = self.parse_domain(page["url"])
-                if url_tld and domain_tld:
-                    if domain_tld.fld == url_tld.fld:
-                        part_path += 1
-                        if "dateLastCrawled" in page and self.check_freshness(page["dateLastCrawled"]):
-                            fresh += 1
+                x_data = [self.cos_similarity(source_vector, self.tokenize(d)) for d in checked_domains]
             except Exception as e:
-                self.logger.info("Failed to process subpage of domain {}, {}".format(self.domain, e))
-        return [part_path, fresh, pages, matches], texts
+                self.logger.warning("Failed to process data for {}: {}.".format(self.domain, e))
+                raise Exception
+        else:
+            x_data = []
+        while len(x_data) != 20:
+            x_data.append(2)
+        return array([x_data])
+
+    def blackbox_preprocess(self, domains: list):
+        x_data = [self.tokenize(domain) for domain in domains]
+        if len(x_data) < self.max_domains:
+            while len(x_data) != self.max_domains:
+                x_data.append([])
+        else:
+            x_data = x_data[:self.max_domains]
+        return array(
+            [pad_sequences(x_data, maxlen=self.max_domain_length, padding='post', truncating='post').astype("int8")])
+
+    def embedding_preprocess(self, texts: list):
+        x_data = self.tokenizer.texts_to_sequences(texts)
+        if len(x_data) < self.max_texts:
+            while len(x_data) != self.max_texts:
+                x_data.append([])
+        else:
+            x_data = x_data[:self.max_texts]
+        return array([pad_sequences(x_data, maxlen=self.max_text_length, padding='post', truncating='post')])
+
+    def cleanup_text(self, text: str) -> str:
+        text = text.replace("\n", "").encode('unicode_escape').decode('unicode_escape').strip().lower()
+        if text.endswith("..."):
+            text = text.replace("...", "")
+        text = re.sub(r'https?://\S+|www\.\S+', '', text)
+        text = re.sub(r'<.*?>', '', text)
+        for x in text:
+            if x.isspace():
+                continue
+            if x in self.punctuations:
+                text = text.replace(x, "")
+            elif not x.isalnum():
+                text = text.replace(x, "")
+        text = re.sub(r'\s+', ' ', text)
+        return remove_stopwords(text)
+
+    def preprocess_data(self, data: dict) -> Tuple[int, list, list]:
+        if ("results" in data and data["results"]) and (
+                "results" in data["results"][0]["content"] and data["results"][0]["content"]["results"]):
+            if "organic" in data["results"][0]["content"]["results"] and data["results"][0]["content"]["results"]["organic"]:
+                domains, texts = [], []
+                for org_res in data["results"][0]["content"]["results"]["organic"]:
+                    domains.append(urlparse(org_res["url"]).netloc.replace("www.", ""))
+                    texts.append(self.cleanup_text(org_res["desc"]))
+                return len(data["results"][0]["content"]["results"]["organic"]), domains, texts
+        return 0, [], []
+
+    def classify_similarity(self, domains: list) -> int:
+        return self.similarity_model.predict(self.similarity_preprocess(domains))[0]
+
+    def classify_embedding(self, texts: list) -> int:
+        prediction = self.cnn_texts.predict(self.embedding_preprocess(texts))
+        self.nn_prob_logger.info("{},{},embedding".format(self.domain, prediction[0]))
+        return 0 if prediction[0] <= self.nn_prob_threshold else 1
+
+    def classify_blackbox(self, domains: list) -> int:
+        prediction = self.cnn_blackbox.predict(self.blackbox_preprocess(domains))
+        self.nn_prob_logger.info("{},{},blackbox".format(self.domain, prediction[0]))
+        return 0 if prediction[0] <= self.nn_prob_threshold else 1
 
     def prepare_data(self) -> list:
         """
@@ -243,15 +186,11 @@ class Preprocessor:
         :return:
             list, features used for prediction
         """
-        if "TEST_MODE" in os.environ and os.environ["TEST_MODE"] == "true":
-            raw_data = self.dry_run()
-        else:
-            raw_data = self.fetch_data()
-        if "webPages" in raw_data:
-            processed_metadata, texts = self.process_metadata(raw_data["webPages"])
-        else:
-            processed_metadata, texts = [0, 0, 0, 0], []
-        processed_text = self.process_text(texts)
-        processed_metadata.extend(processed_text)
+        raw_data = self.fetch_data()
+        if not raw_data:
+            raise NoDataException
+        results, domains, texts = self.preprocess_data(raw_data)
+        processed_metadata = [results, self.classify_similarity(domains), self.classify_embedding(texts),
+                              self.classify_blackbox(domains)]
         self.result_logger.info("{},{}".format(self.domain, processed_metadata))
         return [processed_metadata]

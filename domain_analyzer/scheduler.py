@@ -1,17 +1,13 @@
-from __future__ import absolute_import
 import os
-import logging
-import pickle
-import redis
-from datetime import datetime
-import json
-from celery import Celery
-from analyzer.preprocessor import Preprocessor
+import traceback
 from analyzer.evaluator import Evaluator
+from analyzer.exc import FetchException, PreprocessException, NoDataException
+from analyzer.preprocessor import Preprocessor
 from analyzer.tools import build_logger
-from analyzer.exc import FetchException, PreprocessException
-from keras.models import load_model
-import gensim
+from analyzer.cache import CacheConnector
+from celery import Celery, states
+from celery import Task
+
 
 # def env_variable_validation():
 #     variables = ["MAIL_SMTP", "MAIL", "MAIL_PASSWORD", "SENDER_NUMBER", "CELERY_BROKER", "ERROR_API", "SMS_API",
@@ -21,15 +17,16 @@ import gensim
 #             print("Environment variable {} is missing but is required".format(variable))
 #             raise KeyboardInterrupt
 if os.environ["MODE"] == "domain_analyzer":
+    # import tensorflow as tf
+    import pickle
+
     base_path = "/opt/domain_analyzer/analyzer/models/"
-    we_model = load_model("{}we_model.h5".format(base_path))
-    tf_idf = pickle.load(open("{}tf_idf.pkl".format(base_path), "rb"))
-    ensamble_tf_idf = pickle.load(open("{}ensamble_tf_idf.pkl".format(base_path), "rb"))
-    lda_dictionary = gensim.corpora.Dictionary.load("{}lda_dictionary.pkl".format(base_path))
-    lda_model = gensim.models.LdaMulticore.load("{}lda_model.pkl".format(base_path))
-    ensamble_lda = pickle.load(open("{}ensamble_lda.pkl".format(base_path), "rb"))
+    ensemble = pickle.load(open("{}ensemble_model_v2.pkl".format(base_path), "rb"))
+    ensemble_scaler = pickle.load(open("{}ensemble_scaler_v2.pkl".format(base_path), "rb"))
+    similarity_model = pickle.load(open("{}gb_similarity.pkl".format(base_path), "rb"))
     tokenizer = pickle.load(open("{}tokenizer.pkl".format(base_path), "rb"))
-    ensamble_we = pickle.load(open("{}ensamble_we.pkl".format(base_path), "rb"))
+    # cnn_blackbox = tf.keras.models.load_model("{}domains_blackbox_no_embedding_v2.h5".format(base_path))
+    # cnn_texts = tf.keras.models.load_model("{}texts_we_glove_cnn_v3.h5".format(base_path))
 
 app = Celery('oraculum', broker=os.environ.get("CELERY_BROKER"))
 
@@ -63,33 +60,41 @@ def predict_domain(self, domain: id):
     """
     Main execution method.
     """
-    logger = logging.getLogger("main")
-    enrichers = []
-    # connection = redis.Redis(os.environ["REDIS_RESULTS"], port=6379, db=os.environ["REDIS_DB"])
-    # result_connection = redis.Redis(os.environ["REDIS_ANALYSIS"], port=6379, db=os.environ["REDIS_DB_ANALYSIS"])
+    logger = build_logger("main_worker", "/opt/domain_analyzer/logs/")
+    cache = CacheConnector()
     try:
-        logger.info("Data received")
-        domain_data = Preprocessor(domain, tf_idf, ensamble_tf_idf, lda_dictionary, lda_model,
-                                   ensamble_lda, tokenizer, we_model, ensamble_we).prepare_data()
-        logger.info("Domain preprocessed, {}".format(domain_data))
-        if len(enrichers) > 0:
-            for enricher in enrichers:
-                domain_data.append(enricher.enrich(domain))
-        result = Evaluator(domain_data).predict_label()
-        logger.info("Result present, {}".format(result))
-        # persist_result(domain, connection, result)
-        # analysis_done(result_connection, domain)
-        return result
+        preprocessor = Preprocessor(domain, similarity_model, tokenizer)
+        domain_data = preprocessor.prepare_data()
+        evaluator = Evaluator(domain_data, domain, ensemble_scaler, ensemble)
+        result = evaluator.predict_label()
+        if isinstance(result, int):
+            cache.push_result(domain, result)
+            cache.finish_analysis(domain)
+            return result
+        else:
+            raise Exception
     except FetchException:
         if self.request.retries < 6:
             self.retry(args=(domain))
     except PreprocessException as pe:
+        cache.finish_analysis(domain)
         logger.warning(pe)
+        self.update_state(
+            state=states.FAILURE,
+            meta="Preprocessor failed {}".format(pe)
+        )
+    except NoDataException:
+        cache.finish_analysis(domain)
+        return "No data found"
     except Exception as e:
+        cache.finish_analysis(domain)
         logger.warning("General failure during analysis, {}".format(e))
+        logger.warning("{}".format(traceback.format_exc()))
+        self.update_state(
+            state=states.FAILURE,
+            meta=e
+        )
 
 
 if __name__ == '__main__':
-    logger = build_logger("main", "/opt/domain_analyzer/logs/")
-    # env_variable_validation()
     app.start()
