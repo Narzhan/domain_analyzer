@@ -10,3 +10,7 @@ class PreprocessException(Exception):
 
 class NoDataException(Exception):
     pass
+
+
+class QuotaReached(Exception):
+    pass

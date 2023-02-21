@@ -1,7 +1,7 @@
 import os
 import traceback
 from analyzer.evaluator import Evaluator
-from analyzer.exc import FetchException, PreprocessException, NoDataException
+from analyzer.exc import FetchException, PreprocessException, NoDataException, QuotaReached
 from analyzer.preprocessor import Preprocessor
 from analyzer.tools import build_logger
 from analyzer.cache import CacheConnector
@@ -73,6 +73,10 @@ def predict_domain(self, domain: id):
             return result
         else:
             raise Exception
+    except QuotaReached:
+        cache.finish_analysis(domain)
+        cache.push_result(domain, -1)
+        return "Quota reached, try later."
     except FetchException:
         if self.request.retries < 6:
             self.retry(args=(domain))

@@ -8,7 +8,7 @@ from typing import Tuple
 from datetime import datetime, timedelta
 from math import sqrt
 from urllib.parse import urlparse
-from .exc import PreprocessException, FetchException, NoDataException
+from .exc import PreprocessException, FetchException, NoDataException, QuotaReached
 from .tools import build_logger
 
 if os.environ["MODE"] == "domain_analyzer":
@@ -63,6 +63,9 @@ class Preprocessor:
                     self.persist_data(data)
                 return data
             else:
+                if response.status_code == 429:
+                    self.logger.info("Quota reached try later.")
+                    raise QuotaReached
                 self.logger.warning("Failed to download data for {}, {}: {}".format(self.domain, response.status_code,
                                                                                     response.content))
 

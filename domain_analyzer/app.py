@@ -29,7 +29,11 @@ class Predict:
         if "force" in request and request["force"] is True:
             return self.create_task(request["domain"])
         if self.cache.check_result(request["domain"]):
-            return self.cache.fetch_result(request["domain"]), falcon.HTTP_200
+            result = self.cache.fetch_result(request["domain"])
+            if result["prediction"] == -1:
+                return {"status": "Quota reached."}, falcon.HTTP_429
+            else:
+                return result, falcon.HTTP_200
         else:
             if not self.cache.check_analysis(request["domain"]):
                 return self.create_task(request["domain"])

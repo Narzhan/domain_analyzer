@@ -14,6 +14,8 @@ class CacheConnector:
         self.analysis_connection = redis.Redis(os.environ["CACHE_ANALYSIS"], port=6379,
                                                db=int(os.environ["ANALYSIS_DB"]))
         self.logger = build_logger("cache", "/opt/domain_analyzer/logs/")
+        self.record_ttl = int(os.environ.get("RECORD_TTL", 604800))
+        self.record_ttl_quota = int(os.environ.get("RECORD_TTL_QUOTA", 86400))
 
     def fetch_result(self, domain: str) -> dict:
         """
@@ -24,9 +26,9 @@ class CacheConnector:
             analysis: dict, analysis
         """
         try:
-            domain_analysis = json.loads(self.result_connection.get(domain).decode("utf-8", errors="ignore"))
-            domain_analysis.update({"domain": domain})
-            return domain_analysis
+            # domain_analysis = json.loads(self.result_connection.get(domain).decode("utf-8", errors="ignore"))
+            # domain_analysis.update({"domain": domain})
+            return json.loads(self.result_connection.get(domain).decode("utf-8", errors="ignore"))
         except Exception as e:
             self.logger.warning("Failed to get cached results, {}".format(e))
             return {"status": "Cache error with domain {}".format(domain)}
@@ -39,9 +41,11 @@ class CacheConnector:
              result: list, prediction and prediction probability
         """
         try:
+            record_ttl = self.record_ttl if result >= 0 else self.record_ttl_quota
             self.result_connection.set(domain,
-                                       json.dumps({"prediction": result, "created": self.create_date()}),
-                                       int(os.environ["RECORD_TTL"]))
+                                       json.dumps(
+                                           {"prediction": result, "created": self.create_date(), "domain": domain}),
+                                       record_ttl)
         except Exception as e:
             self.logger.warning("Failed to persist results to cache for domain {}, {}".format(domain, e))
 
